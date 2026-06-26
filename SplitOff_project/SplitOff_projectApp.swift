@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct SplitOff_projectApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TabBarManager()
         }
+        .modelContainer(Persistencia.container)
     }
 }
