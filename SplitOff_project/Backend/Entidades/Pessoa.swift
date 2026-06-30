@@ -9,7 +9,7 @@ final class Pessoa {
 
     var grupo: Grupo?
 
-    @Relationship(deleteRule: .cascade, inverse: \ParticipanteComanda.pessoa)
+    @Relationship(deleteRule: .nullify, inverse: \ParticipanteComanda.pessoa)
     var participacoesComanda: [ParticipanteComanda] = []
 
     init(
@@ -22,15 +22,4 @@ final class Pessoa {
         self.grupo = grupo
     }
 
-    /// Exclui a pessoa de forma segura. Antes de apagá-la, remove cada uma de
-    /// suas participações via `ParticipanteComanda.remover(de:)`, garantindo a
-    /// limpeza dos itens órfãos (aqueles em que ela era a única dona). Use este
-    /// método em vez de `context.delete(pessoa)` direto, que dispararia o
-    /// cascade sem rodar essa limpeza.
-    func excluir(de context: ModelContext) {
-        for participacao in participacoesComanda {
-            participacao.remover(de: context)
-        }
-        context.delete(self)
-    }
 }

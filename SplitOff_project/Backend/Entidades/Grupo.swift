@@ -15,6 +15,9 @@ final class Grupo {
     @Relationship(deleteRule: .cascade, inverse: \Comanda.grupo)
     var comandas: [Comanda] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \Transferencia.grupo)
+    var transferencias: [Transferencia] = []
+
     init(nome: String, foto: Data? = nil) {
         self.nome = nome
         self.foto = foto

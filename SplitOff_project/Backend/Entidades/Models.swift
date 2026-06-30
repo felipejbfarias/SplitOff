@@ -9,5 +9,6 @@ let splitOffModels: [any PersistentModel.Type] = [
     Comanda.self,
     ParticipanteComanda.self,
     Pedido.self,
-    ItemPedido.self
+    ItemPedido.self,
+    Transferencia.self
 ]

@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-/// View raiz do app. Responsável por montar a TabView e controlar a navegação: guarda a aba selecionada e hospeda um `NavigationStack` por aba, de onde partem os pushes para as telas de detalhe. É aqui que a estrutura de navegação principal vive.
-
+// View raiz: monta a TabView, guarda a aba selecionada e hospeda um
+// NavigationStack por aba (Grupos, Comandas, Busca).
 struct TabBarManager: View {
     var body: some View {
         Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)

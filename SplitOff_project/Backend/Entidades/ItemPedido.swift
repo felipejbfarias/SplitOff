@@ -12,9 +12,7 @@ final class ItemPedido {
     @Relationship(deleteRule: .nullify, inverse: \Item.itensPedido)
     var itemCardapio: Item?
 
-    /// Pessoas (participantes da comanda) que dividem este item.
-    /// Muitos-para-muitos: um item pode ter vários donos e um participante
-    /// pode ser dono de vários itens.
+    // Participantes que dividem este item.
     @Relationship(inverse: \ParticipanteComanda.itensConsumidos)
     var donos: [ParticipanteComanda] = []
 
@@ -30,11 +28,9 @@ final class ItemPedido {
         self.itemCardapio = itemCardapio
     }
 
-    /// Quanto cada dono paga deste item: preço dividido igualmente entre os donos.
-    /// Um item sempre tem ao menos um dono (garantido no init); o `max(..., 1)`
-    /// é só uma proteção contra divisão por zero. Valor exato, sem arredondar —
-    /// a exibição em 2 casas é responsabilidade da camada de UI.
+    // Quanto cada dono paga: preço dividido igualmente entre os donos.
     var precoPorDono: Decimal {
-        preco / Decimal(max(donos.count, 1))
+        guard !donos.isEmpty else { return 0 }
+        return preco / Decimal(donos.count)
     }
 }

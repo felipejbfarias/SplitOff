@@ -4,50 +4,47 @@ import SwiftData
 @Model
 final class ParticipanteComanda {
     var id: UUID = UUID()
-    var contaAtualPaga: Bool = false
+    var valorPago: Decimal = 0
+    var nomePessoa: String
 
     var comanda: Comanda?
     var pessoa: Pessoa?
 
-    /// Itens que esta pessoa divide nesta comanda (lado inverso da relação
-    /// muitos-para-muitos declarada em `ItemPedido.donos`).
+    // Itens que esta pessoa divide nesta comanda (inverso de ItemPedido.donos).
     var itensConsumidos: [ItemPedido] = []
 
-    /// Total que esta pessoa deve nesta comanda: para cada item que ela divide,
-    /// soma a sua fração (preço do item ÷ nº de donos). Calculado.
-    var contaAtual: Decimal {
+    // Total dos itens que esta pessoa divide, sem taxa de serviço.
+    var subtotalContaAtual: Decimal {
         itensConsumidos.reduce(0) { $0 + $1.precoPorDono }
+    }
+
+    var taxaServicoAtual: Decimal {
+        subtotalContaAtual * Comanda.taxaServicoPercentual
+    }
+
+    // Total que esta pessoa deve, com taxa de serviço obrigatória.
+    var contaAtual: Decimal {
+        subtotalContaAtual + taxaServicoAtual
     }
 
     init(
         pessoa: Pessoa? = nil,
         comanda: Comanda? = nil,
-        contaAtualPaga: Bool = false
+        valorPago: Decimal = 0,
+        nomePessoa: String? = nil
     ) {
         self.pessoa = pessoa
         self.comanda = comanda
-        self.contaAtualPaga = contaAtualPaga
-    }
-
-    /// Remove esta participação da comanda. Os itens em que esta pessoa era a
-    /// ÚNICA dona ficariam órfãos (todo item precisa ter dono), então são
-    /// apagados. Itens com outros donos apenas perdem esta pessoa.
-    ///
-    /// É um fluxo raro — ocorre sobretudo ao excluir a Pessoa do histórico —,
-    /// então o `valorTotal` da comanda e os saldos podem ficar desatualizados,
-    /// o que é aceito por design. Precisa ser chamado explicitamente: uma
-    /// exclusão em cascata crua (apagar a Pessoa direto no contexto) não roda
-    /// esta limpeza.
-    func remover(de context: ModelContext) {
-        for item in itensConsumidos where item.donos.count == 1 {
-            context.delete(item)
-        }
-        context.delete(self)
+        self.valorPago = valorPago
+        self.nomePessoa = nomePessoa ?? pessoa?.nome ?? ""
     }
 }
 
 @Model
 final class Comanda {
+    static let taxaServicoPercentual = Decimal(10) / Decimal(100)
+    static let limiarFechamento = Decimal(1) / Decimal(100)
+
     var id: UUID = UUID()
     var nome: String
     var data: Date = Date.now
@@ -64,10 +61,26 @@ final class Comanda {
     @Relationship(deleteRule: .cascade, inverse: \Pedido.comanda)
     var pedidos: [Pedido] = []
 
-    /// Valor cheio da comanda: soma do preço de todos os itens de todos os
-    /// pedidos (a conta do restaurante). Calculado.
-    var valorTotal: Decimal {
+    // Valor dos itens antes da taxa de serviço.
+    var subtotal: Decimal {
         pedidos.reduce(0) { $0 + $1.valorTotal }
+    }
+
+    var taxaServico: Decimal {
+        subtotal * Self.taxaServicoPercentual
+    }
+
+    // Valor cheio da comanda, já com a taxa de serviço obrigatória de 10%.
+    var valorTotal: Decimal {
+        subtotal + taxaServico
+    }
+
+    var valorPago: Decimal {
+        participantes.reduce(0) { $0 + $1.valorPago }
+    }
+
+    var podeFechar: Bool {
+        abs(valorPago - valorTotal) <= Self.limiarFechamento
     }
 
     init(
@@ -84,14 +97,4 @@ final class Comanda {
         self.grupo = grupo
     }
 
-    /// Adiciona uma pessoa como participante desta comanda, garantindo o
-    /// vínculo: a pessoa precisa pertencer ao mesmo grupo da comanda.
-    /// Retorna o participante criado, ou `nil` se a pessoa não for do grupo.
-    @discardableResult
-    func adicionarParticipante(_ pessoa: Pessoa) -> ParticipanteComanda? {
-        guard pessoa.grupo == grupo else { return nil }
-        let participante = ParticipanteComanda(pessoa: pessoa, comanda: self)
-        participantes.append(participante)
-        return participante
-    }
 }
