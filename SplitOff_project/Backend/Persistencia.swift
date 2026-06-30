@@ -1,9 +1,9 @@
 import Foundation
 import SwiftData
 
-/// Ponto central que monta o banco local (SwiftData, sem nuvem) usado pelo app.
+// Monta o banco local usado pelo app.
 enum Persistencia {
-    /// Container compartilhado, persistido em disco no dispositivo.
+    // Container persistido em disco.
     static let container: ModelContainer = {
         let schema = Schema(splitOffModels)
         let configuracao = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

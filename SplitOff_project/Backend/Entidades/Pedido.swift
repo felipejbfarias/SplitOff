@@ -14,7 +14,7 @@ final class Pedido {
         self.comanda = comanda
     }
 
-    /// Valor cheio do pedido: soma do preço de todos os itens (sem divisão).
+    // Valor cheio do pedido: soma do preço de todos os itens.
     var valorTotal: Decimal {
         itens.reduce(0) { $0 + $1.preco }
     }
