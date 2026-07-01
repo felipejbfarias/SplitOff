@@ -5,7 +5,6 @@
 //  Created by Matheus Miranda Cabral de Menezes on 26/06/26.
 //
 
-
 import SwiftUI
 import SwiftData
 
