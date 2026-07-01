@@ -6,13 +6,77 @@
 //
 
 import SwiftUI
+import SwiftData
+
+// Popup destrutivo reutilizável (apagar grupo, deletar item, remover membro, encerrar comanda).
 
 struct PopUPDestrutivo: View {
+    let titulo: String // Título em destaque
+    let mensagem: String // Texto explicando as consequências da ação
+    let textoBotao: String // Rótulo do botão
+    let aoConfirmar: () -> Void // Ação destrutiva confirmada
+    var aoCancelar: (() -> Void)? = nil // Cancela e fecha o popup
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        ZStack {
+            // Fundo escurecido; tocar fora cancela a ação.
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture { aoCancelar?() }
+
+            popup
+        }
+    }
+
+    private var popup: some View {
+        VStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(titulo)
+                    .font(.headline)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(mensagem)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // Botão único; tocar fora do cartão cancela.
+            Button(role: .destructive) {
+                aoConfirmar()
+            } label: {
+                Text(textoBotao)
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(Color.red)
+            }
+            .buttonStyle(.bordered)
+            .tint(Color(red: 120 / 255, green: 120 / 255, blue: 128 / 255))
+            .controlSize(.large)
+        }
+        .padding(24)
+        .frame(maxWidth: 320)
+        .glassEffect(.regular, in: .rect(cornerRadius: 28))
+        .padding(.horizontal, 32)
     }
 }
 
 #Preview {
-    PopUPDestrutivo()
+    // Usa um grupo dos dados de exemplo e liga a confirmação ao CRUD.removerGrupo.
+    let context = DadosDeExemplo.container.mainContext
+    let crud = CRUD(context: context)
+    let grupo = try! context.fetch(FetchDescriptor<Grupo>()).first!
+
+    ZStack {
+        PopUPDestrutivo(
+            titulo: "Apagar \(grupo.nome)",
+            mensagem: "Todo o histórico, comandas e saldos serão apagados.",
+            textoBotao: "Apagar"
+        ) {
+            try? crud.removerGrupo(grupo)
+        }
+    }
 }
