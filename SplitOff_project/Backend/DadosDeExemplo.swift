@@ -30,7 +30,7 @@ enum DadosDeExemplo {
             let bruno = try crud.criarPessoa(nome: "Bruno", grupo: grupo)
             let carla = try crud.criarPessoa(nome: "Carla", grupo: grupo)
 
-            let restaurante = try crud.criarRestaurante(nome: "Cantina da Esquina")
+            let restaurante = try crud.criarLugar(nome: "Cantina da Esquina")
             guard let cardapio = restaurante.cardapio else { return }
 
             let parmegiana = try crud.criarItem(nome: "Parmegiana", preco: 48, cardapio: cardapio)

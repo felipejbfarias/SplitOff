@@ -85,7 +85,7 @@ final class CRUD {
 
     // Cria um lugar já com um cardápio vazio associado.
     @discardableResult
-    func criarRestaurante(nome: String, nomeCardapio: String = "Cardápio") throws -> Restaurante {
+    func criarLugar(nome: String, nomeCardapio: String = "Cardápio") throws -> Restaurante {
         let cardapio = Cardapio(nome: try nomeValidado(nomeCardapio))
         let restaurante = Restaurante(nome: try nomeValidado(nome), cardapio: cardapio)
         context.insert(restaurante)
@@ -125,7 +125,8 @@ final class CRUD {
     @discardableResult
     func criarPedido(comanda: Comanda) throws -> Pedido {
         try validarComandaAtiva(comanda)
-        let pedido = Pedido(comanda: comanda)
+        let numero = comanda.pedidos.count + 1
+        let pedido = Pedido(numero: numero, comanda: comanda)
         context.insert(pedido)
         try salvar()
         return pedido
@@ -294,6 +295,13 @@ final class CRUD {
     // Remove um item do cardápio preservando os itens de pedidos históricos.
     func removerItem(_ item: Item) throws {
         context.delete(item)
+        try salvar()
+    }
+
+    // Remove uma comanda do histórico. Em cascata, apaga participantes e pedidos.
+    // Não altera saldos já fechados das pessoas.
+    func removerComanda(_ comanda: Comanda) throws {
+        context.delete(comanda)
         try salvar()
     }
 

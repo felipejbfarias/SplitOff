@@ -64,6 +64,38 @@ struct PopUPDestrutivo: View {
     }
 }
 
+extension PopUPDestrutivo {
+    // Apagar um grupo e tudo dentro dele.
+    static func apagarGrupo(
+        _ grupo: Grupo,
+        aoConfirmar: @escaping () -> Void,
+        aoCancelar: (() -> Void)? = nil
+    ) -> PopUPDestrutivo {
+        PopUPDestrutivo(
+            titulo: "Apagar \(grupo.nome)",
+            mensagem: "Todo o histórico, comandas e saldos serão apagados.",
+            textoBotao: "Apagar",
+            aoConfirmar: aoConfirmar,
+            aoCancelar: aoCancelar
+        )
+    }
+
+    // Apagar uma comanda do histórico.
+    static func apagarComanda(
+        _ comanda: Comanda,
+        aoConfirmar: @escaping () -> Void,
+        aoCancelar: (() -> Void)? = nil
+    ) -> PopUPDestrutivo {
+        PopUPDestrutivo(
+            titulo: "Apagar \(comanda.nome)",
+            mensagem: "Essa comanda e seus pedidos serão apagados do histórico. Os saldos já fechados das pessoas não mudam.",
+            textoBotao: "Apagar",
+            aoConfirmar: aoConfirmar,
+            aoCancelar: aoCancelar
+        )
+    }
+}
+
 #Preview {
     // Usa um grupo dos dados de exemplo e liga a confirmação ao CRUD.removerGrupo.
     let context = DadosDeExemplo.container.mainContext
