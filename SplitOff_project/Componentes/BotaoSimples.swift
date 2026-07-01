@@ -7,12 +7,26 @@
 
 import SwiftUI
 
-struct BotaoSimples: View {
+struct BotaoSimples1: View {
+    let titulo: String
+    let acao: () -> Void
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        Button(action: acao) {
+            Text(titulo)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+        }
+        .controlSize(.large)
+        .buttonStyle(.glassProminent)
+        .tint(.pink)
+        .padding(.horizontal, 12)
     }
 }
 
 #Preview {
-    BotaoSimples()
+    BotaoSimples1(
+        titulo: "Criar"
+    ) {
+    }
 }
