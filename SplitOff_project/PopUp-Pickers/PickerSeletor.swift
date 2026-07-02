@@ -25,8 +25,7 @@ import SwiftUI
 struct PickerSeletor: View {
     let titulo: String
     let opcoes: [String]
-//    @Binding var selecao: String
-    @State private var selecao: String? = nil
+    @Binding var selecao: String?
     let acaoAdicionar: () -> Void
     var cor : Color {
         selecao == nil ? .secondary : .primary
@@ -48,7 +47,7 @@ struct PickerSeletor: View {
                 //                .tag(nil as String?)
                 ForEach(opcoes, id: \.self) { opcao in
                     Text(opcao)
-                        .tag(opcao)
+                        .tag(opcao as String?)
                 }
                 if tem {
                     Divider()
@@ -72,7 +71,7 @@ struct PickerSeletor: View {
 
     struct PreviewWrapper: View {
 
-        @State private var lugarSelecionado = ""
+        @State private var lugarSelecionado: String? = nil
 
         let lugares = [
             "Bar do Pinto",
@@ -86,6 +85,7 @@ struct PickerSeletor: View {
             PickerSeletor(
                 titulo: "Lugar",
                 opcoes: lugares,
+                selecao: $lugarSelecionado,
                 acaoAdicionar: {
                     print("Abrir Sheet")
                 },
