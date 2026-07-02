@@ -2,7 +2,7 @@
 //  CardComandaBusca.swift
 //  SplitOff_project
 //
-//  Created by Matheus Miranda Cabral de Menezes on 02/06/26.
+//  Created by Matheus Miranda Cabral de Menezes on 02/07/26.
 //
 
 import SwiftUI

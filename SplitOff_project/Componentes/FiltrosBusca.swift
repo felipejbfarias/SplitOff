@@ -72,31 +72,30 @@ struct FiltrosBusca: View {
         }
         .onChange(of: comandas) { atualizarResultados() }
     }
-
-    // Seletor de modo
+    
+    // O modo ativo fica pintado
     private var seletorModo: some View {
-        HStack(spacing: 0) {
-            ForEach(ModoBusca.allCases, id: \.self) { opcao in
-                Button {
-                    withAnimation(.snappy) { modo = opcao }
-                } label: {
-                    Image(systemName: opcao.simbolo)
-                        .font(.subheadline.weight(modo == opcao ? .semibold : .regular))
-                        .foregroundStyle(modo == opcao ? .primary : .secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background {
-                            if modo == opcao {
-                                Capsule().fill(Color(.secondarySystemGroupedBackground))
-                            }
-                        }
-                        .contentShape(.capsule)
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                ForEach(ModoBusca.allCases, id: \.self) { opcao in
+                    Button {
+                        withAnimation(.snappy) { modo = opcao }
+                    } label: {
+                        Image(systemName: opcao.simbolo)
+                            .font(.subheadline.weight(modo == opcao ? .semibold : .regular))
+                            .foregroundStyle(modo == opcao ? Color.white : .secondary)
+                            .frame(width: 52, height: 40)
+                            .glassEffect(
+                                modo == opcao ? .regular.tint(Color.accentColor) : .regular,
+                                in: .capsule
+                            )
+                            .contentShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(Color(.systemGray5), in: .capsule)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // Campo de busca com lupa e botão de fechar ao lado.
@@ -110,10 +109,12 @@ struct FiltrosBusca: View {
                     TextField("Buscar lugar", text: $buscaNome)
                         .focused($foco, equals: .nome)
                         .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
                 } else {
                     campoValor
                 }
             }
+            .frame(height: 22)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(Color(.secondarySystemGroupedBackground), in: .capsule)
