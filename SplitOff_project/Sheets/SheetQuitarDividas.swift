@@ -130,12 +130,18 @@ struct SheetQuitarDividas: View {
 
     // Card da consulta
     private var cartaoConsulta: some View {
-        cartao {
-            rowPicker(titulo: "Consultar", selecao: $consultado, opcoes: pessoasDoGrupo)
+        VStack(spacing: 20) {
+            ListaRowsPicker(linhas: [
+                .picker(
+                    titulo: "Consultar",
+                    opcoes: pessoasDoGrupo.map(\.nome),
+                    selecao: bindingNome($consultado, opcoes: pessoasDoGrupo)
+                )
+            ])
 
-            // Durante a digitação o card recolh
+            // Durante a digitação o card recolhe.
             if let consultado, !valorFocado {
-                saldoDetalhado(consultado)
+                cartao { saldoDetalhado(consultado) }
             }
         }
     }
@@ -188,15 +194,17 @@ struct SheetQuitarDividas: View {
     }
 
     private func secaoRegistrarTransferencia(_ consultado: Pessoa) -> some View {
-        secao("Registrar Transferência") {
-            cartao {
-                rowPicker(
+        let opcoes = pessoasDoGrupo.filter { $0 != consultado }
+        return ListaRowsPicker(
+            titulo: "Registrar Transferência",
+            linhas: [
+                .picker(
                     titulo: "Para quem",
-                    selecao: $destinatario,
-                    opcoes: pessoasDoGrupo.filter { $0 != consultado }
+                    opcoes: opcoes.map(\.nome),
+                    selecao: bindingNome($destinatario, opcoes: opcoes)
                 )
-            }
-        }
+            ]
+        )
     }
 
     // Digitar transferencia
@@ -257,24 +265,11 @@ struct SheetQuitarDividas: View {
         }
     }
 
-    private func rowPicker(titulo: String, selecao: Binding<Pessoa?>, opcoes: [Pessoa]) -> some View {
-        HStack {
-            Text(titulo)
-                .fontWeight(.medium)
-            Spacer()
-            PickerSeletor(
-                titulo: "Selecionar",
-                opcoes: opcoes.map(\.nome),
-                selecao: Binding(
-                    get: { selecao.wrappedValue?.nome },
-                    set: { nome in selecao.wrappedValue = opcoes.first { $0.nome == nome } }
-                ),
-                acaoAdicionar: {},
-                tem: false
-            )
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+    private func bindingNome(_ selecao: Binding<Pessoa?>, opcoes: [Pessoa]) -> Binding<String?> {
+        Binding(
+            get: { selecao.wrappedValue?.nome },
+            set: { nome in selecao.wrappedValue = opcoes.first { $0.nome == nome } }
+        )
     }
 
     private func textoMoeda(_ valor: Decimal) -> String {
@@ -283,17 +278,6 @@ struct SheetQuitarDividas: View {
 
     private func moeda(_ valor: Decimal) -> Text {
         Text(textoMoeda(valor)).fontWeight(.medium)
-    }
-
-    // Título.
-    private func secao<Conteudo: View>(_ titulo: String, @ViewBuilder _ conteudo: () -> Conteudo) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(titulo)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
-            conteudo()
-        }
     }
 
     // Card
@@ -333,7 +317,7 @@ struct SheetQuitarDividas: View {
     let context = DadosDeExemplo.container.mainContext
     let grupo = try! context.fetch(FetchDescriptor<Grupo>()).first!
 
-    // Ana deve, Bruno emprestou e "Você" está presente como em todos os grupos.
+    // Ana deve, Bruno emprestou e Você está presente como em todos os grupos.
     let _ = {
         if !grupo.pessoas.contains(where: { $0.nome == "Você" }) {
             _ = try? CRUD(context: context).criarPessoa(nome: "Você", grupo: grupo)
