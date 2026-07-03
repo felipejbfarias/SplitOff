@@ -312,29 +312,216 @@ struct SheetQuitarDividas: View {
     }
 }
 
-#Preview {
+#Preview("1 devedor, 1 credor") {
     @Previewable @State var mostrar = false
-    let context = DadosDeExemplo.container.mainContext
-    let grupo = try! context.fetch(FetchDescriptor<Grupo>()).first!
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Quitacao simples",
+        saldos: [
+            ("Você", 0),
+            ("Ana", -42),
+            ("Bruno", 42)
+        ]
+    )
 
-    // Ana deve, Bruno emprestou e Você está presente como em todos os grupos.
-    let _ = {
-        if !grupo.pessoas.contains(where: { $0.nome == "Você" }) {
-            _ = try? CRUD(context: context).criarPessoa(nome: "Você", grupo: grupo)
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("1 devedor, varios credores") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Uma pessoa deve para varias",
+        saldos: [
+            ("Você", -100),
+            ("Ana", 70),
+            ("Bruno", 20),
+            ("Carla", 10),
+            ("Diego", 0)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Cadeia compensada") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "X deve Y, Y deve W",
+        saldos: [
+            // X deve 40 para Y, Y deve 40 para W: Y zera, X deve direto para W
+            ("Você", 0),
+            ("X", -40),
+            ("Y", 0),
+            ("W", 40)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Cadeia: intermediario recebe") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "X deve mais do que Y repassa",
+        saldos: [
+            // X deve 70 para Y, Y deve 50 para W: W recebe 50 e Y ainda recebe 20.
+            ("Você", 0),
+            ("X", -70),
+            ("Y", 20),
+            ("W", 50)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Cadeia: intermediario paga") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "X deve menos do que Y repassa",
+        saldos: [
+            // X deve 50 para Y, Y deve 70 para W: X paga 50 e Y ainda paga 20.
+            ("Você", 0),
+            ("X", -50),
+            ("Y", -20),
+            ("W", 70)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Cadeia com centavos") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Compensacao decimal em cadeia",
+        saldos: [
+            // X deve 33,35 para Y, Y deve 33,35 para W: Y zera com centavos.
+            ("Você", 0),
+            ("X", PreviewQuitarDividas.decimal("-33.35")),
+            ("Y", 0),
+            ("W", PreviewQuitarDividas.decimal("33.35"))
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Cadeia longa compensada") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "X passa por Y e W ate Z",
+        saldos: [
+            // X deve para Y, Y deve para W, W deve para Z: só X e Z ficam com saldo.
+            ("Você", 0),
+            ("X", -60),
+            ("Y", 0),
+            ("W", 0),
+            ("Z", 60)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Varios devedores, 1 credor") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Varias pessoas devem para uma",
+        saldos: [
+            ("Você", 160),
+            ("Ana", -80),
+            ("Bruno", -45),
+            ("Carla", -25),
+            ("Diego", -10)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Complexo balanceado") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Muitos saldos cruzados",
+        saldos: [
+            ("Você", -70),
+            ("Ana", -50),
+            ("Bruno", -20),
+            ("Carla", 90),
+            ("Diego", 30),
+            ("Elisa", 20),
+            ("Fabi", 0)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Valores decimais") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Centavos preservados",
+        saldos: [
+            ("Você", PreviewQuitarDividas.decimal("10.25")),
+            ("Ana", PreviewQuitarDividas.decimal("-4.10")),
+            ("Bruno", PreviewQuitarDividas.decimal("-6.15")),
+            ("Carla", 0)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+#Preview("Sem sugestoes") {
+    @Previewable @State var mostrar = false
+    let cenario = PreviewQuitarDividas.cenario(
+        nome: "Tudo zerado",
+        saldos: [
+            ("Você", 0),
+            ("Ana", 0),
+            ("Bruno", 0),
+            ("Carla", 0)
+        ]
+    )
+
+    PreviewQuitarDividas.sheet(mostrar: $mostrar, cenario: cenario)
+}
+
+@MainActor
+private enum PreviewQuitarDividas {
+    struct Cenario {
+        let container: ModelContainer
+        let grupo: Grupo
+    }
+
+    static func cenario(nome: String, saldos: [(String, Decimal)]) -> Cenario {
+        let schema = Schema(splitOffModels)
+        let configuracao = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(for: schema, configurations: [configuracao])
+        let context = container.mainContext
+        let grupo = Grupo(nome: nome)
+
+        context.insert(grupo)
+        grupo.pessoas = saldos.map { nome, saldo in
+            let pessoa = Pessoa(nome: nome, saldo: saldo, grupo: grupo)
+            context.insert(pessoa)
+            return pessoa
         }
-        for pessoa in grupo.pessoas {
-            switch pessoa.nome {
-                case "Ana": pessoa.saldo = -27
-                case "Bruno": pessoa.saldo = 27
-                default: pessoa.saldo = 0
+
+        return Cenario(container: container, grupo: grupo)
+    }
+
+    static func decimal(_ valor: String) -> Decimal {
+        Decimal(string: valor, locale: Locale(identifier: "en_US_POSIX")) ?? 0
+    }
+
+    static func sheet(mostrar: Binding<Bool>, cenario: Cenario) -> some View {
+        Color(.systemGroupedBackground)
+            .ignoresSafeArea()
+            .task { mostrar.wrappedValue = true }
+            .sheet(isPresented: mostrar) {
+                SheetQuitarDividas(grupo: cenario.grupo)
             }
-        }
-    }()
-
-    Color(.systemGroupedBackground).ignoresSafeArea()
-        .task { mostrar = true }
-        .sheet(isPresented: $mostrar) {
-            SheetQuitarDividas(grupo: grupo)
-        }
-        .modelContainer(DadosDeExemplo.container)
+            .modelContainer(cenario.container)
+    }
 }
