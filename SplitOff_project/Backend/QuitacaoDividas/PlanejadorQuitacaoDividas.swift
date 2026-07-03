@@ -1,47 +1,53 @@
 import Foundation
 
 enum PlanejadorQuitacaoDividas {
-    static func calcularSugestoes(para grupo: Grupo) -> [SugestaoTransferencia]
-    {
-        var sugestoesTransferencia: [SugestaoTransferencia] = []
-        var pagadores = Heap<Pessoa>(comparePor: { $0.saldo > $1.saldo })
-        var recebedores = Heap<Pessoa>(comparePor: { $0.saldo > $1.saldo })
+    // VAMBORA DAVIZAOOOO
+
+    // Par pessoa + saldo restante usado só durante o cálculo.
+    // O algoritmo trabalha nessas cópias: o saldo real das Pessoas nunca é alterado aqui,
+    private struct Pendencia {
+        let pessoa: Pessoa
+        var saldo: Decimal
+    }
+
+    static func calcularSugestoes(para grupo: Grupo) -> [SugestaoTransferencia] {
+        var sugestoes: [SugestaoTransferencia] = []
+
+        // Maior dívida no topo de um heap, maior crédito no topo do outro.
+        let pagadores = Heap<Pendencia>(comparePor: { $0.saldo < $1.saldo })
+        let recebedores = Heap<Pendencia>(comparePor: { $0.saldo > $1.saldo })
 
         for pessoa in grupo.pessoas {
             if pessoa.saldo < 0 {
-                pagadores.insert(pessoa)
+                pagadores.insert(Pendencia(pessoa: pessoa, saldo: pessoa.saldo))
             } else if pessoa.saldo > 0 {
-                recebedores.insert(pessoa)
+                recebedores.insert(Pendencia(pessoa: pessoa, saldo: pessoa.saldo))
             }
         }
 
-        while !pagadores.isEmpty {
-            guard let pagador = pagadores.remove() else { break }
-            guard let recebedor = recebedores.remove()
-            else { break }
-            
+        // Cada rodada casa o maior devedor com o maior credor e zera pelo menos um dos dois.
+        while let pagador = pagadores.remove(), let recebedor = recebedores.remove() {
             let valor = min(-pagador.saldo, recebedor.saldo)
-            
-            let sugestaoTransferencia = SugestaoTransferencia(
-                devedor: pagador,
-                credor: recebedor,
-                valor: valor,
-            )
-            
-            sugestoesTransferencia.append(sugestaoTransferencia)
-            
-            pagador.saldo += valor
-            recebedor.saldo -= valor
-            
-            if (pagador.saldo < 0) {
-                pagadores.insert(pagador)
-            } else if (recebedor.saldo > 0) {
-                recebedores.insert(recebedor)
+
+            sugestoes.append(SugestaoTransferencia(
+                devedor: pagador.pessoa,
+                credor: recebedor.pessoa,
+                valor: valor
+            ))
+
+            var restantePagador = pagador
+            restantePagador.saldo += valor
+            if restantePagador.saldo < 0 {
+                pagadores.insert(restantePagador)
+            }
+
+            var restanteRecebedor = recebedor
+            restanteRecebedor.saldo -= valor
+            if restanteRecebedor.saldo > 0 {
+                recebedores.insert(restanteRecebedor)
             }
         }
-        // Vambora Davizaoo!!
-        // Entrada: pessoas do grupo com saldo negativo devem pagar, pessoas com saldo positivo devem receber.
-        // Saida: menor conjunto possivel de sugestoes de transferencias de devedores para credores.
-        return sugestoesTransferencia
+
+        return sugestoes
     }
 }
