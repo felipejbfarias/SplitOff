@@ -8,98 +8,73 @@
 import Foundation
 import SwiftUI
 
-class Heap<T: Comparable> {
-    private var quantidade: Int
-    private var array: [T]
-    
-    private func bottomUpHeapify(start: Int) -> Void {
-        let v: T = array[start]
-        var i = start
-        
-        while (2 * i <= quantidade) {
-            var j: Int = 2 * i
-            if (j < quantidade) {
-                j += (array[j] > array[j + 1]) ? 1 : 0
-            }
-            if (v <= array[j]) { break }
-            
-            array[i] = array[j]
-            i = j
-        }
-        
-        array[i] = v
-    }
-    
-    private func bottomUp() {
-        var i = quantidade / 2
-        while (i > 0) {
-            bottomUpHeapify(start: i)
-            i -= 1
-        }
-    }
-    
-    private func topDownHeapify(i: Int) -> Void {
-        let v: T = array[i]
-        var i = i
-        
-        while (i > 1 && v > array[i]) {
-            array[i] = array[i / 2]
-            i /= 2
-        }
-        
-        array[i] = v
-        
-        print(array)
-    }
-    
-    public init(dados: [T]) {
-        array = [dados[0]]
-        print (array.capacity)
-        
-        for dado in dados {
-            array.append(dado)
-        }
-        for dado in dados {
-            array.append(dado)
-        }
-        
-        quantidade = array.count
-        print(array)
+class Heap<T> {
+    var heap: [T] = []
+    var compare: (T, T) -> Bool
 
-        bottomUp()
+    init(comparePor: @escaping (T, T) -> Bool) {
+        compare = comparePor
     }
-    
-    public func insert(t: T) -> Void {
-        quantidade += 1;
-        
-        if (quantidade >= array.capacity) {
-            array.append(t)
+
+    func insert(_ element: T) {
+        heap.append(element)
+        var currentIndex = heap.count - 1
+
+        while currentIndex > 0
+            && compare(heap[currentIndex], heap[(currentIndex - 1) / 2])
+        {
+            heap.swapAt(currentIndex, (currentIndex - 1) / 2)
+            currentIndex = (currentIndex - 1) / 2
+        }
+    }
+
+    func remove() -> T? {
+        guard !heap.isEmpty else {
+            return nil
+        }
+
+        let topElement = heap[0]
+
+        if heap.count == 1 {
+            heap.removeFirst()
         } else {
-            array[quantidade] = t
-        }
-        
-        topDownHeapify(i: quantidade)
-    }
-    
-    public func pop() -> T? {
-        if quantidade == 0 { return nil }
-        
-        let excluida: T = array[1]
-        swap(&array[1], &array[quantidade])
-        quantidade -= 1
-        
-        bottomUpHeapify(start: 1)
-        return excluida
-    }
-    
-    public func length() -> Int { return quantidade }
-}
 
-#Preview {
-    Circle()
-        .onAppear() {
-            var dados = [1, 4, 6, 3, 7, 9, 2, 5, 8, 0]
-//            let heap = Heap(dados: dados)
-            print("oi")
+            heap[0] = heap.removeLast()
+            var currentIndex = 0
+
+            while true {
+                let leftChildIndex = 2 * currentIndex + 1
+                let rightChildIndex = 2 * currentIndex + 2
+
+                var maxIndex = currentIndex
+                if leftChildIndex < heap.count
+                    && compare(heap[leftChildIndex], heap[maxIndex])
+                {
+                    maxIndex = leftChildIndex
+                }
+                if rightChildIndex < heap.count
+                    && compare(heap[rightChildIndex], heap[maxIndex])
+                {
+                    maxIndex = rightChildIndex
+                }
+
+                if maxIndex == currentIndex {
+                    break
+                }
+
+                heap.swapAt(currentIndex, maxIndex)
+                currentIndex = maxIndex
+            }
         }
+
+        return topElement
+    }
+
+    func peek() -> T? {
+        return heap.first
+    }
+
+    var isEmpty: Bool {
+        return heap.isEmpty
+    }
 }
