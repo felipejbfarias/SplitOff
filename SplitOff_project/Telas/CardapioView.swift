@@ -6,13 +6,88 @@
 //
 
 import SwiftUI
+import SwiftData
 
+// Etapa 2 do novo pedido: marcar os itens do cardápio e as quantidades da rodada.
 struct CardapioView: View {
+    let comanda: Comanda
+    let autor: ParticipanteComanda
+    var aoConcluir: (() -> Void)? = nil
+
+    @State private var linhas: [LinhaStepper] = []
+    @State private var mostrarEditar = false
+    @State private var irParaDivisao = false
+
+    private var cardapio: Cardapio? {
+        comanda.restaurante?.cardapio
+    }
+
+    // Itens com quantidade escolhida, que seguem para a divisão.
+    private var escolhidos: [LinhaStepper] {
+        linhas.filter(\.incluso)
+    }
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack(spacing: 0) {
+            TopBar(simboloDireita: cardapio == nil ? nil : "pencil") { mostrarEditar = true }
+
+            Text("Cardápio")
+                .font(.system(size: 34, weight: .bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.top, 8)
+
+            BarraProgresso(etapa: .cardapio)
+                .padding(.horizontal)
+                .padding(.top, 28)
+
+            if let cardapio {
+                ScrollView {
+                    ListaRowsStepper(linhas: $linhas, cardapio: cardapio)
+                        .padding()
+                        .padding(.top, 12)
+                }
+
+                BotaoSimples1(titulo: "Encerrar Seleção") { irParaDivisao = true }
+                    .disabled(escolhidos.isEmpty)
+                    .padding(.bottom, 12)
+            } else {
+                ContentUnavailableView(
+                    "Comanda sem cardápio",
+                    systemImage: "menucard",
+                    description: Text("Essa comanda não tem um lugar com cardápio associado.")
+                )
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear(perform: montarLinhas)
+        .onChange(of: cardapio?.itens.count) { montarLinhas() }
+        .sheet(isPresented: $mostrarEditar) {
+            if let cardapio {
+                SheetEditarCardapio(cardapio: cardapio)
+            }
+        }
+        .navigationDestination(isPresented: $irParaDivisao) {
+            ItensDividirView(comanda: comanda, autor: autor, escolhas: escolhidos, aoConcluir: aoConcluir)
+        }
+    }
+
+    private func montarLinhas() {
+        let quantidades = Dictionary(uniqueKeysWithValues: linhas.map { ($0.id, $0.quantidade) })
+        let itens = (cardapio?.itens ?? []).sorted { $0.nome < $1.nome }
+        linhas = itens.map { LinhaStepper(id: $0.id, item: $0, quantidade: quantidades[$0.id] ?? 0) }
     }
 }
 
 #Preview {
-    CardapioView()
+    let context = DadosDeExemplo.container.mainContext
+    let comanda = try! context.fetch(FetchDescriptor<Comanda>()).first { $0.ativa }!
+    let autor = comanda.participantes.first!
+
+    NavigationStack {
+        CardapioView(comanda: comanda, autor: autor)
+    }
+    .modelContainer(DadosDeExemplo.container)
 }

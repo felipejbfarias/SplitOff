@@ -188,13 +188,13 @@ final class CRUD {
         return participante
     }
 
-    // Registra quanto um participante pagou no total da comanda.
+    // Soma mais um pagamento ao total já pago pelo participante na comanda.
     func registrarPagamento(_ valorPago: Decimal, para participante: ParticipanteComanda) throws {
         guard valorPago >= 0 else { throw CRUDErro.pagamentoNegativo }
         guard let comanda = participante.comanda else { throw CRUDErro.participanteForaDaComanda }
         try validarComandaAtiva(comanda)
 
-        participante.valorPago = valorPago
+        participante.valorPago += valorPago
         try salvar()
     }
 
