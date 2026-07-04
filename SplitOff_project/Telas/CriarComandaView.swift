@@ -30,13 +30,11 @@ struct CriarComandaView: View {
         grupos.first { $0.nome == grupoSelecionado }
     }
 
-    // Pessoas do grupo escolhido com Você primeiro, como nos outros seletores.
-    private var pessoasDoGrupo: [Pessoa] {
-        (grupoAtual?.pessoas ?? []).sorted {
-            if $0.nome == "Você" { return true }
-            if $1.nome == "Você" { return false }
-            return $0.nome < $1.nome
-        }
+    // Pessoas selecionáveis do grupo escolhido
+    private var outrosDoGrupo: [Pessoa] {
+        (grupoAtual?.pessoas ?? [])
+            .filter { $0.nome != CRUD.nomeVoce }
+            .sorted { $0.nome < $1.nome }
     }
 
     private var podeCriar: Bool {
@@ -79,7 +77,7 @@ struct CriarComandaView: View {
                             ),
                             .sheet(
                                 titulo: "Pessoas do grupo",
-                                selecionado: !pessoasSelecionadas.isEmpty,
+                                selecionado: grupoAtual != nil,
                                 desabilitado: grupoAtual == nil,
                                 acao: { mostrarSelecionarPessoas = true }
                             )
@@ -104,13 +102,14 @@ struct CriarComandaView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .onChange(of: grupoSelecionado) {
-            pessoasSelecionadas = pessoasDoGrupo
+            pessoasSelecionadas = outrosDoGrupo
         }
         .sheet(isPresented: $mostrarSelecionarPessoas) {
             if let grupoAtual {
                 SheetSelecionarPessoas(
                     modo: .grupo(nome: grupoAtual.nome),
-                    pessoas: pessoasDoGrupo,
+                    pessoas: outrosDoGrupo,
+                    fixos: [CRUD.nomeVoce],
                     nome: \.nome
                 ) { selecionadas in
                     pessoasSelecionadas = selecionadas
@@ -136,8 +135,9 @@ struct CriarComandaView: View {
         let restaurante = restaurantes.first { $0.nome == lugarSelecionado }
 
         do {
+            // O criarComanda já coloca você como participante.
             let comanda = try crud.criarComanda(nome: nome, grupo: grupo, restaurante: restaurante)
-            for pessoa in pessoasSelecionadas {
+            for pessoa in pessoasSelecionadas where pessoa.nome != CRUD.nomeVoce {
                 try crud.adicionarParticipante(pessoa, a: comanda)
             }
 
