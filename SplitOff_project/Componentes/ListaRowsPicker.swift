@@ -60,7 +60,7 @@ struct ListaRowsPicker: View {
     var titulo: String? = nil
     let linhas: [LinhaPicker]
 
-    private let alturaRow: CGFloat = 44
+    private let alturaRow: CGFloat = 56
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -109,22 +109,19 @@ struct ListaRowsPicker: View {
         .disabled(linha.desabilitado)
     }
 
-    // Reaproveita o PickerSeletor
+    // Linha que abre um sheet: rótulo + chevron, já que o toque leva para outra tela.
     private func botaoSheet(rotulo: String, selecionado: Bool, acao: @escaping () -> Void) -> some View {
-        PickerSeletor(
-            titulo: rotulo,
-            opcoes: [rotulo],
-            selecao: .constant(selecionado ? rotulo : nil),
-            acaoAdicionar: {},
-            tem: false
-        )
-        .allowsHitTesting(false)
-        .overlay {
-            Button(action: acao) {
-                Color.clear.contentShape(.rect)
+        Button(action: acao) {
+            HStack(spacing: 8) {
+                Text(rotulo)
+                    .foregroundStyle(selecionado ? Color.primary : .secondary)
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
     }
 
     // Card

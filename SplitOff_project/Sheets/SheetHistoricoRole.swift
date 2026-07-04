@@ -73,8 +73,12 @@ struct SheetHistoricoRole: View {
 
                     secao("Por Pessoa") {
                         cartao {
-                            linhas(comanda.participantes) { participante in
-                                linha(participante.nomePessoa, direita: moeda(participante.contaAtual))
+                            if comanda.participantes.isEmpty {
+                                estadoVazio("Nenhum participante")
+                            } else {
+                                linhas(comanda.participantes) { participante in
+                                    linha(participante.nomePessoa, direita: moeda(participante.contaAtual))
+                                }
                             }
                         }
                     }
@@ -102,7 +106,18 @@ struct SheetHistoricoRole: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 32)
 
-                    if todosQuitaram {
+                    if comanda.participantes.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "person.crop.circle.badge.questionmark")
+                                .font(.system(size: 84))
+                                .foregroundStyle(.secondary)
+                            Text("Sem Participantes")
+                                .font(.title.bold())
+                            Text("Esta comanda ainda não tem pessoas registradas")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if todosQuitaram {
                         VStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 84))
@@ -126,9 +141,11 @@ struct SheetHistoricoRole: View {
 
                     Spacer(minLength: 56)
 
-                    cartao {
-                        linhas(comanda.participantes) { participante in
-                            linha(participante.nomePessoa, direita: textoStatus(participante))
+                    if !comanda.participantes.isEmpty {
+                        cartao {
+                            linhas(comanda.participantes) { participante in
+                                linha(participante.nomePessoa, direita: textoStatus(participante))
+                            }
                         }
                     }
                 }
@@ -148,7 +165,7 @@ struct SheetHistoricoRole: View {
     }
 
     private var todosQuitaram: Bool {
-        faltouAcertar <= Comanda.limiarFechamento
+        !comanda.participantes.isEmpty && faltouAcertar <= Comanda.limiarFechamento
     }
 
     // Texto exibido no status de pagamento.
@@ -183,6 +200,14 @@ struct SheetHistoricoRole: View {
     private func cartao<Conteudo: View>(@ViewBuilder _ conteudo: () -> Conteudo) -> some View {
         VStack(spacing: 0) { conteudo() }
             .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
+    }
+
+    private func estadoVazio(_ texto: String) -> some View {
+        Text(texto)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
     }
 
     // Linhas com divisores.

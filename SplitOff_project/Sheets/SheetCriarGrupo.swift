@@ -12,17 +12,26 @@ import PhotosUI
 
 // Sheet curto para adicionar um grupo. Grava via CRUD.criarGrupo.
 struct SheetCriarGrupo: View {
+    // Avisa quem apresentou qual grupo nasceu (ex.: para já selecionar no picker).
+    let aoCriar: ((Grupo) -> Void)?
+
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var fotoItem: PhotosPickerItem?
     @State private var fotoSelecionada: Data?
 
     @State private var nomeGrupo = ""
-    @State private var pessoas: [Pessoa] = []
+    // Só os nomes: as Pessoas de verdade nascem pelo CRUD na hora de salvar.
+    @State private var pessoas: [String] = []
     @State private var novoNomePessoa = ""
+    @State private var mensagemErro: String?
 
     @FocusState private var editando: Bool
     @State private var detente: PresentationDetent = .height(800)
+
+    init(aoCriar: ((Grupo) -> Void)? = nil) {
+        self.aoCriar = aoCriar
+    }
 
 
     // Só habilita criar com nome preenchido e preço válido.
@@ -76,13 +85,17 @@ struct SheetCriarGrupo: View {
                             .focused($editando)
                     }
                     Section("Membros") {
-                        ForEach(pessoas, id: \.id) { pessoa in
-                            Text(pessoa.nome)
+                        // "Você" entra automático em todo grupo criado.
+                        Text("Você")
+                            .foregroundStyle(.secondary)
+
+                        ForEach(pessoas, id: \.self) { nome in
+                            Text(nome)
                         }
                         .onDelete { indexSet in
                             pessoas.remove(atOffsets: indexSet)
                         }
-                        
+
                         TextField("Adicionar pessoa", text: $novoNomePessoa)
                             .focused($editando)
                             .onSubmit {
@@ -90,6 +103,14 @@ struct SheetCriarGrupo: View {
                             }
                     }
                     .font(.system(size: 17, weight: .regular))
+
+                    if let mensagemErro {
+                        Section {
+                            Text(mensagemErro)
+                                .font(.subheadline)
+                                .foregroundStyle(.red)
+                        }
+                    }
                 }
                 .padding(-10)
             }
@@ -124,42 +145,38 @@ struct SheetCriarGrupo: View {
         }
     }
 
-    // Cria pessoa temporaria.
+    // Guarda o nome digitado na lista de membros pendentes.
     private func adicionarPessoaTemporaria() {
         let nomeTratado = novoNomePessoa.trimmingCharacters(in: .whitespaces)
 
         guard !nomeTratado.isEmpty else { return }
 
-        guard !pessoas.contains(where: { $0.nome == nomeTratado }) else {
+        guard !pessoas.contains(nomeTratado), nomeTratado != "Você" else {
             novoNomePessoa = ""
             return
         }
 
-        let novaPessoa = Pessoa(nome: nomeTratado)
-
-        pessoas.append(novaPessoa)
+        pessoas.append(nomeTratado)
         novoNomePessoa = ""
     }
-    // Cria o grupo e fecha o sheet.
+
+    // Cria o grupo e as pessoas pelo CRUD (com "Você" sempre presente) e fecha o sheet.
     private func criarGrupo() {
         adicionarPessoaTemporaria()
-        let grupo = Grupo(
-            nome: nomeGrupo,
-            foto: fotoSelecionada
-        )
 
-        context.insert(grupo)
+        let crud = CRUD(context: context)
 
-        for pessoa in pessoas {
-            pessoa.grupo = grupo
-            context.insert(pessoa)
-            grupo.pessoas.append(pessoa)
-        }
         do {
-            try context.save()
+            let grupo = try crud.criarGrupo(nome: nomeGrupo, foto: fotoSelecionada)
+
+            for nome in ["Você"] + pessoas {
+                try crud.criarPessoa(nome: nome, grupo: grupo)
+            }
+
+            aoCriar?(grupo)
             dismiss()
         } catch {
-            print("Erro ao salvar grupo: \(error)")
+            mensagemErro = error.localizedDescription
         }
     }
 }
