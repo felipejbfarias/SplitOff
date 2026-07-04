@@ -8,7 +8,12 @@ enum Persistencia {
         let schema = Schema(splitOffModels)
         let configuracao = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [configuracao])
+            let container = try ModelContainer(for: schema, configurations: [configuracao])
+
+            // Desde a primeira inicialização existe o grupo Você
+            try? CRUD(context: container.mainContext).garantirGrupoVoce()
+
+            return container
         } catch {
             fatalError("Falha ao criar o ModelContainer: \(error)")
         }

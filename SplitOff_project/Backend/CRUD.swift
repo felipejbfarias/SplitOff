@@ -18,6 +18,9 @@ enum CRUDErro: LocalizedError {
     case valorTransferenciaInvalido
     case transferenciaParaMesmaPessoa
     case pessoasEmGruposDiferentes
+    case nomeReservado
+    case voceImutavel
+    case grupoVoceImutavel
 
     var errorDescription: String? {
         switch self {
@@ -53,31 +56,60 @@ enum CRUDErro: LocalizedError {
             return "A transferência precisa ter pessoas diferentes."
         case .pessoasEmGruposDiferentes:
             return "As duas pessoas precisam pertencer ao mesmo grupo."
+        case .nomeReservado:
+            return "O nome \"Você\" é reservado para o dono do app."
+        case .voceImutavel:
+            return "O \"Você\" não pode ser renomeado ou removido."
+        case .grupoVoceImutavel:
+            return "O grupo \"Você\" não pode ser renomeado ou removido."
         }
     }
 }
 
 @MainActor
 final class CRUD {
+    // O dono do app: uma Pessoa "Você" própria por grupo (saldos isolados entre grupos)
+    // e um grupo pessoal "Você" para as saídas sozinho. Identificados pelo nome, que é
+    // reservado: ninguém mais pode se chamar assim, nem renomear/remover os originais.
+    static let nomeVoce = "Você"
+
     let context: ModelContext
 
     init(context: ModelContext) {
         self.context = context
     }
 
-    // Cria um grupo.
+    // Garante o grupo pessoal "Você" desde a primeira inicialização do app.
+    func garantirGrupoVoce() throws {
+        let grupos = try context.fetch(FetchDescriptor<Grupo>())
+        guard !grupos.contains(where: { $0.nome == Self.nomeVoce }) else { return }
+
+        let grupo = Grupo(nome: Self.nomeVoce)
+        context.insert(grupo)
+        voceDoGrupo(grupo)
+        try salvar()
+    }
+
+    // Cria um grupo, já com o seu próprio "Você" dentro.
     @discardableResult
     func criarGrupo(nome: String, foto: Data? = nil) throws -> Grupo {
-        let grupo = Grupo(nome: try nomeValidado(nome), foto: foto)
+        let nomeGrupo = try nomeValidado(nome)
+        guard !ehNomeReservado(nomeGrupo) else { throw CRUDErro.nomeReservado }
+
+        let grupo = Grupo(nome: nomeGrupo, foto: foto)
         context.insert(grupo)
+        voceDoGrupo(grupo)
         try salvar()
         return grupo
     }
 
-    // Cria uma pessoa já vinculada a um grupo.
+    // Cria uma pessoa já vinculada a um grupo. O "Você" nasce junto com o grupo, nunca por aqui.
     @discardableResult
     func criarPessoa(nome: String, grupo: Grupo, saldo: Decimal = 0) throws -> Pessoa {
-        let pessoa = Pessoa(nome: try nomeValidado(nome), saldo: saldo, grupo: grupo)
+        let nomePessoa = try nomeValidado(nome)
+        guard !ehNomeReservado(nomePessoa) else { throw CRUDErro.nomeReservado }
+
+        let pessoa = Pessoa(nome: nomePessoa, saldo: saldo, grupo: grupo)
         context.insert(pessoa)
         try salvar()
         return pessoa
@@ -117,6 +149,12 @@ final class CRUD {
 
         let comanda = Comanda(nome: try nomeValidado(nome), ativa: ativa, restaurante: restaurante, grupo: grupo)
         context.insert(comanda)
+
+        // Você do grupo participa de toda comanda
+        let voce = voceDoGrupo(grupo)
+        let participante = ParticipanteComanda(pessoa: voce, comanda: comanda, nomePessoa: voce.nome)
+        context.insert(participante)
+
         try salvar()
         return comanda
     }
@@ -242,15 +280,25 @@ final class CRUD {
         return transferencia
     }
 
-    // Atualiza os dados de um grupo.
+    // Atualiza os dados de um grupo. O grupo pessoal "Você" é imutável.
     func atualizarGrupo(_ grupo: Grupo, nome: String) throws {
-        grupo.nome = try nomeValidado(nome)
+        guard grupo.nome != Self.nomeVoce else { throw CRUDErro.grupoVoceImutavel }
+
+        let novoNome = try nomeValidado(nome)
+        guard !ehNomeReservado(novoNome) else { throw CRUDErro.nomeReservado }
+
+        grupo.nome = novoNome
         try salvar()
     }
 
-    // Atualiza os dados editáveis de uma pessoa. O saldo é alterado apenas por comandas fechadas e transferências.
+    // Atualiza os dados editáveis de uma pessoa. O "Você" é imutável e o saldo
+    // é alterado apenas por comandas fechadas e transferências.
     func atualizarPessoa(_ pessoa: Pessoa, nome: String) throws {
+        guard pessoa.nome != Self.nomeVoce else { throw CRUDErro.voceImutavel }
+
         let nomeValidado = try nomeValidado(nome)
+        guard !ehNomeReservado(nomeValidado) else { throw CRUDErro.nomeReservado }
+
         pessoa.nome = nomeValidado
 
         for participacao in pessoa.participacoesComanda {
@@ -281,13 +329,17 @@ final class CRUD {
     }
 
     // Remove um grupo. Em cascata, apaga também suas pessoas e suas comandas.
+    // O grupo Você não pode ser removido.
     func removerGrupo(_ grupo: Grupo) throws {
+        guard grupo.nome != Self.nomeVoce else { throw CRUDErro.grupoVoceImutavel }
         context.delete(grupo)
         try salvar()
     }
 
     // Remove uma pessoa preservando participações e transferências históricas.
+    // Você não pode ser removido.
     func removerPessoa(_ pessoa: Pessoa) throws {
+        guard pessoa.nome != Self.nomeVoce else { throw CRUDErro.voceImutavel }
         context.delete(pessoa)
         try salvar()
     }
@@ -303,6 +355,23 @@ final class CRUD {
     func removerComanda(_ comanda: Comanda) throws {
         context.delete(comanda)
         try salvar()
+    }
+
+    // Você do grupo
+    @discardableResult
+    private func voceDoGrupo(_ grupo: Grupo) -> Pessoa {
+        if let voce = grupo.pessoas.first(where: { $0.nome == Self.nomeVoce }) {
+            return voce
+        }
+
+        let voce = Pessoa(nome: Self.nomeVoce, grupo: grupo)
+        context.insert(voce)
+        return voce
+    }
+
+    // "você", "VOCÊ", "Voce"... todas as variações são reservadas.
+    private func ehNomeReservado(_ nome: String) -> Bool {
+        nome.compare(Self.nomeVoce, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 
     private func nomeValidado(_ nome: String) throws -> String {

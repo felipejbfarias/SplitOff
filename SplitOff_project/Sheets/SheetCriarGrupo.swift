@@ -160,7 +160,7 @@ struct SheetCriarGrupo: View {
         novoNomePessoa = ""
     }
 
-    // Cria o grupo e as pessoas pelo CRUD (com "Você" sempre presente) e fecha o sheet.
+    // Cria o grupo e as pessoas pelo CRUD e fecha o sheet.
     private func criarGrupo() {
         adicionarPessoaTemporaria()
 
@@ -169,7 +169,7 @@ struct SheetCriarGrupo: View {
         do {
             let grupo = try crud.criarGrupo(nome: nomeGrupo, foto: fotoSelecionada)
 
-            for nome in ["Você"] + pessoas {
+            for nome in pessoas {
                 try crud.criarPessoa(nome: nome, grupo: grupo)
             }
 

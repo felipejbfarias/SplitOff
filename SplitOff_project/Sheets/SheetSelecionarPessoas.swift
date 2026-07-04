@@ -34,6 +34,10 @@ enum ModoSelecionarPessoas {
 struct SheetSelecionarPessoas<Modelo: Identifiable>: View where Modelo.ID == UUID {
     let modo: ModoSelecionarPessoas
     let pessoas: [Modelo]
+
+    // Nomes que sempre participam e não podem ser desmarcados
+    var fixos: [String] = []
+
     let nome: (Modelo) -> String
     let aoConfirmar: ([Modelo]) -> Void
 
@@ -46,7 +50,7 @@ struct SheetSelecionarPessoas<Modelo: Identifiable>: View where Modelo.ID == UUI
     private let alturaMaxima: CGFloat = 640
 
     private var altura: CGFloat {
-        min(alturaBase + CGFloat(pessoas.count) * alturaLinha, alturaMaxima)
+        min(alturaBase + CGFloat(pessoas.count + fixos.count) * alturaLinha, alturaMaxima)
     }
 
     var body: some View {
@@ -57,7 +61,7 @@ struct SheetSelecionarPessoas<Modelo: Identifiable>: View where Modelo.ID == UUI
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    ListaRowsSeletor(linhas: $linhas, modo: .multipla)
+                    ListaRowsSeletor(linhas: $linhas, modo: .multipla, fixas: fixos)
                 }
                 .padding()
             }
@@ -104,7 +108,8 @@ struct SheetSelecionarPessoas<Modelo: Identifiable>: View where Modelo.ID == UUI
         }
     }()
 
-    let pessoas = grupo.pessoas.sorted { primeira, _ in primeira.nome == "Você" }
+    // Você entra fixo só os outros são selecionáveis.
+    let pessoas = grupo.pessoas.filter { $0.nome != CRUD.nomeVoce }.sorted { $0.nome < $1.nome }
 
     return Color(.systemGroupedBackground).ignoresSafeArea()
         .task { mostrar = true }
@@ -112,6 +117,7 @@ struct SheetSelecionarPessoas<Modelo: Identifiable>: View where Modelo.ID == UUI
             SheetSelecionarPessoas(
                 modo: .grupo(nome: grupo.nome),
                 pessoas: pessoas,
+                fixos: [CRUD.nomeVoce],
                 nome: \.nome
             ) { selecionadas in
                 print("Vão:", selecionadas.map(\.nome))

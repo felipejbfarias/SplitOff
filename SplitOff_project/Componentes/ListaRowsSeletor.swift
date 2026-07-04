@@ -28,8 +28,18 @@ struct ListaRowsSeletor<Modelo>: View {
     @Binding var linhas: [LinhaSeletor<Modelo>]
     var modo: ModoSelecao = .multipla
 
+    // Nomes que sempre participam e não podem ser desmarcados
+    var fixas: [String] = []
+
     var body: some View {
         VStack(spacing: 0) {
+            ForEach(fixas, id: \.self) { nome in
+                linhaFixa(nome)
+                if nome != fixas.last || !linhas.isEmpty {
+                    Divider().padding(.leading, 52)
+                }
+            }
+
             ForEach($linhas) { $linha in
                 LinhaSeletorView(
                     nome: linha.nome,
@@ -42,6 +52,22 @@ struct ListaRowsSeletor<Modelo>: View {
             }
         }
         .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
+    }
+
+    // Linha travada, check preenchido e nome em cinza, sem interação.
+    private func linhaFixa(_ nome: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+
+            Text(nome)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     // Aplica a seleção conforme o modo.
