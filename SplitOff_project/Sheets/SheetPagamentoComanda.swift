@@ -21,7 +21,6 @@ struct SheetPagamentoComanda: View {
     @FocusState private var valorFocado: Bool
     @State private var mensagemErro: String?
     @State private var mostrarConfirmacao = false
-    @State private var mostrarFechamento = false
 
     // Valor digitado no teclado
     private var valor: Decimal {
@@ -88,15 +87,6 @@ struct SheetPagamentoComanda: View {
                     aoCancelar: { mostrarConfirmacao = false }
                 )
             }
-
-            if mostrarFechamento {
-                PopUPConfirmacao(
-                    titulo: "Fechar Comanda",
-                    mensagem: "O total pago bateu com o total da comanda. Ao fechar, quem pagou a mais vira credor e quem pagou a menos vira devedor no grupo.",
-                    textoBotao: "Fechar Comanda",
-                    aoConfirmar: fecharComanda
-                )
-            }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -161,13 +151,7 @@ struct SheetPagamentoComanda: View {
 
     @ViewBuilder
     private var rodape: some View {
-        if comanda.podeFechar {
-            BotaoSimples1(titulo: "Fechar Comanda") {
-                valorFocado = false
-                mostrarFechamento = true
-            }
-            .padding(.bottom, 12)
-        } else if selecionado != nil {
+        if selecionado != nil {
             BotaoSimples1(titulo: "Concluir Pagamento") {
                 valorFocado = false
                 mostrarConfirmacao = true
@@ -189,25 +173,10 @@ struct SheetPagamentoComanda: View {
         do {
             try CRUD(context: modelContext).registrarPagamento(valor, para: selecionado)
             mostrarConfirmacao = false
-
-            if comanda.podeFechar {
-                mostrarFechamento = true
-            } else {
-                dismiss()
-            }
-        } catch {
-            mensagemErro = error.localizedDescription
-            mostrarConfirmacao = false
-        }
-    }
-
-    private func fecharComanda() {
-        do {
-            try CRUD(context: modelContext).fecharComanda(comanda)
             dismiss()
         } catch {
             mensagemErro = error.localizedDescription
-            mostrarFechamento = false
+            mostrarConfirmacao = false
         }
     }
 

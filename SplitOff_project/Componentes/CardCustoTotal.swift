@@ -29,6 +29,8 @@ struct CardCustoTotal: View {
             }
             .font(.system(size: 17, weight: .regular))
             .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
         .padding(24)

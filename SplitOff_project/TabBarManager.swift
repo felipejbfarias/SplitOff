@@ -6,15 +6,63 @@
 //
 
 import SwiftUI
+import SwiftData
 
-// View raiz: monta a TabView, guarda a aba selecionada e hospeda um
-// NavigationStack por aba (Grupos, Comandas, Busca).
+// As abas do app
+enum AbaPrincipal: Hashable {
+    case comanda, grupos, busca
+}
+
+// Monta a TabView
 struct TabBarManager: View {
+    // Se tem comanda ativa, a aba Comanda mostra ela, senão, o histórico de comandas
+    @Query(filter: #Predicate<Comanda> { $0.ativa }) private var comandasAtivas: [Comanda]
+
+    @State private var aba: AbaPrincipal = .comanda
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        TabView(selection: $aba) {
+            Tab("Comanda", systemImage: "receipt.fill", value: AbaPrincipal.comanda) {
+                NavigationStack {
+                    if comandasAtivas.isEmpty {
+                        TodasComandasView()
+                    } else {
+                        ComandaAtualView()
+                    }
+                }
+            }
+
+            Tab("Grupos", systemImage: "person.3.fill", value: AbaPrincipal.grupos) {
+                NavigationStack {
+                    TodosGruposView()
+                }
+            }
+
+            Tab("Buscar", systemImage: "magnifyingglass", value: AbaPrincipal.busca, role: .search) {
+                NavigationStack {
+                    BuscaView()
+                }
+            }
+        }
     }
 }
 
-#Preview {
+#Preview("Com comanda ativa") {
     TabBarManager()
+        .modelContainer(DadosDeExemplo.container)
+}
+
+#Preview("Sem comanda ativa") {
+    let schema = Schema(splitOffModels)
+    let configuracao = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: schema, configurations: [configuracao])
+
+    let _ = {
+        DadosDeExemplo.popular(em: container.mainContext)
+        let comandas = try! container.mainContext.fetch(FetchDescriptor<Comanda>())
+        for comanda in comandas { comanda.ativa = false }
+    }()
+
+    TabBarManager()
+        .modelContainer(container)
 }
