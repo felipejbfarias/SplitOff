@@ -33,35 +33,36 @@ struct PickerSeletor: View {
     let tem: Bool
 
     var body: some View {
-        
-        HStack {
-            if selecao == nil {
-                Text(titulo)
-                    .font(.headline)
-                    .padding(.horizontal, -14)
-                    .foregroundStyle(.secondary)
-                    
-            }
-            Picker(titulo, selection: $selecao) {
-                //            Text(titulo)
-                //                .tag(nil as String?)
+        HStack(spacing: 6) {
+            Text(selecao ?? titulo)
+                .lineLimit(1)
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.bold))
+        }
+        .foregroundStyle(cor)
+        .animation(.snappy, value: selecao)
+        .contentShape(.rect)
+        .overlay {
+            Menu {
                 ForEach(opcoes, id: \.self) { opcao in
-                    Text(opcao)
-                        .tag(opcao as String?)
+                    Button {
+                        withAnimation(.snappy) { selecao = opcao }
+                    } label: {
+                        if selecao == opcao {
+                            Label(opcao, systemImage: "checkmark")
+                        } else {
+                            Text(opcao)
+                        }
+                    }
                 }
+
                 if tem {
                     Divider()
-                    
-                    Button {
-                        acaoAdicionar()
-                    } label: {
-                        Text("Adicionar")
-                    }
-                    .foregroundStyle(.secondary)
-                    .buttonStyle(.plain)
+                    Button("Adicionar", action: acaoAdicionar)
                 }
+            } label: {
+                Color.clear
             }
-            .tint(cor)
         }
     }
 }
