@@ -96,7 +96,7 @@ struct DetalhamentoGrupoView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            CardMaioresDividas(pessoas: maioresDividas)
+            CardDeveMais(grupo: grupo)
 
             Text("Histórico de comandas")
                 .font(.subheadline)
@@ -153,14 +153,6 @@ struct DetalhamentoGrupoView: View {
         }
     }
 
-    private var maioresDividas: [Pessoa] {
-        grupo.pessoas
-            .filter { $0.saldo < 0 }
-            .sorted { $0.saldo < $1.saldo }
-            .prefix(3)
-            .map { $0 }
-    }
-
     private func textoSaldo(_ pessoa: Pessoa) -> String {
         if pessoa.saldo < 0 {
             return "Deve \(abs(pessoa.saldo).formatted(.currency(code: "BRL")))"
@@ -190,44 +182,6 @@ struct DetalhamentoGrupoView: View {
         } catch {
             print("Erro ao remover comanda: \(error)")
         }
-    }
-}
-
-private struct CardMaioresDividas: View {
-    let pessoas: [Pessoa]
-
-    var body: some View {
-        HStack {
-            if pessoas.isEmpty {
-                Text("Nenhuma dívida no momento")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            } else {
-                ForEach(pessoas) { pessoa in
-                    VStack(spacing: 6) {
-                        Image("maca_cortada")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 70, height: 70)
-
-                        Text(pessoa.nome)
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
-
-                        Text(abs(pessoa.saldo).formatted(.currency(code: "BRL")))
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
     }
 }
 
