@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "maca_cortada.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
