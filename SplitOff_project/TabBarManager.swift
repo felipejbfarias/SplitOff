@@ -44,6 +44,17 @@ struct TabBarManager: View {
                 }
             }
         }
+        // A Live Activity espelha a comanda ativa: nasce com ela e some quando ela fecha
+        .onAppear(perform: sincronizarLiveActivity)
+        .onChange(of: comandasAtivas.first?.valorTotal) { sincronizarLiveActivity() }
+    }
+
+    private func sincronizarLiveActivity() {
+        if let comanda = comandasAtivas.first {
+            GerenciadorLiveActivity.sincronizar(com: comanda)
+        } else {
+            GerenciadorLiveActivity.encerrar()
+        }
     }
 }
 
