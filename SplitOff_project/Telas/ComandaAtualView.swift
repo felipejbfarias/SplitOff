@@ -12,6 +12,7 @@ import SwiftData
 // Pedidos: as rodadas feitas, em ordem decrescente.
 // Consumos: total, progresso do pagamento e a conta de cada participante.
 struct ComandaAtualView: View {
+    @Environment(\.modelContext) private var context
     private enum Aba: String, CaseIterable {
         case pedidos = "Pedidos"
         case consumos = "Consumos"
@@ -152,6 +153,13 @@ struct ComandaAtualView: View {
 
     // Redirecionar para a tela de encerramento da comanda.
     private func encerrarComanda(_ comanda: Comanda) {
+        let crud = CRUD(context: context)
+
+        do {
+            try crud.fecharComanda(comanda)
+        } catch {
+            print("Erro ao encerrar comanda: \(error.localizedDescription)")
+        }
     }
 }
 
