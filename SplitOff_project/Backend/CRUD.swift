@@ -156,12 +156,11 @@ final class CRUD {
         return item
     }
 
-    // Cria uma comanda para um grupo, opcionalmente num restaurante.
     @discardableResult
     func criarComanda(
         nome: String,
         grupo: Grupo,
-        restaurante: Restaurante? = nil,
+        restaurante: Restaurante,
         ativa: Bool = true
     ) throws -> Comanda {
         if ativa {
