@@ -14,6 +14,8 @@ struct LiveActivitiesTelaBloqueio: View {
     let gastoVoce: Decimal
     let totalMesa: Decimal
 
+    @Environment(\.colorScheme) private var esquema
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -42,7 +44,8 @@ struct LiveActivitiesTelaBloqueio: View {
                 }
             }
         }
-        .foregroundStyle(.black)
+        // Preto sobre o vidro claro do light mode, rosa no escuro.
+        .foregroundStyle(esquema == .dark ? Color.pink : .black)
         .padding(16)
     }
 
@@ -63,7 +66,7 @@ struct LiveActivitiesTelaBloqueio: View {
     }
 }
 
-#Preview {
+#Preview("Claro") {
     LiveActivitiesTelaBloqueio(
         nomeEvento: "São JoADA",
         nomeLugar: "Bar do Pinto",
@@ -72,4 +75,16 @@ struct LiveActivitiesTelaBloqueio: View {
     )
     .background(.regularMaterial, in: .rect(cornerRadius: 24))
     .padding()
+}
+
+#Preview("Escuro") {
+    LiveActivitiesTelaBloqueio(
+        nomeEvento: "São JoADA",
+        nomeLugar: "Bar do Pinto",
+        gastoVoce: Decimal(string: "77.75")!,
+        totalMesa: Decimal(string: "532.69")!
+    )
+    .background(.regularMaterial, in: .rect(cornerRadius: 24))
+    .padding()
+    .preferredColorScheme(.dark)
 }

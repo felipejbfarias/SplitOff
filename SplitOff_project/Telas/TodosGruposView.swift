@@ -10,15 +10,15 @@ import SwiftData
 
 struct TodosGruposView: View {
     @Environment(\.modelContext) private var context
+    @Environment(OverlayPresenter.self) private var overlay
 
     @Query(sort: \Grupo.nome)
     private var grupos: [Grupo]
 
     @State private var mostrarCriarGrupo = false
-    @State private var grupoParaApagar: Grupo?
     @State private var grupoSelecionado: Grupo?
     @State private var mensagemErro: String?
-    
+
 
     var body: some View {
         ZStack {
@@ -34,7 +34,7 @@ struct TodosGruposView: View {
                 }
 
                 Text("SplitOff")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 34, weight: .bold))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -50,7 +50,7 @@ struct TodosGruposView: View {
                                 if grupo.nome == CRUD.nomeVoce {
                                     mensagemErro = "O grupo Você não pode ser removido."
                                 } else {
-                                    grupoParaApagar = grupo
+                                    confirmarRemocao(grupo)
                                 }
                             }
                         }
@@ -60,13 +60,6 @@ struct TodosGruposView: View {
                 }
             }
 
-            if let grupoParaApagar {
-                PopUPDestrutivo.apagarGrupo(grupoParaApagar) {
-                    removerGrupo(grupoParaApagar)
-                } aoCancelar: {
-                    self.grupoParaApagar = nil
-                }
-            }
         }
         .task {
             garantirGrupoInicial()
@@ -97,15 +90,25 @@ struct TodosGruposView: View {
         }
     }
 
+    // Popup na raiz para escurecer a tela inteira
+    private func confirmarRemocao(_ grupo: Grupo) {
+        overlay.mostrar(
+            PopUPDestrutivo.apagarGrupo(grupo) {
+                overlay.esconder()
+                removerGrupo(grupo)
+            } aoCancelar: {
+                overlay.esconder()
+            }
+        )
+    }
+
     private func removerGrupo(_ grupo: Grupo) {
         let crud = CRUD(context: context)
 
         do {
             try crud.removerGrupo(grupo)
-            grupoParaApagar = nil
         } catch {
             mensagemErro = error.localizedDescription
-            grupoParaApagar = nil
         }
     }
 }
@@ -114,5 +117,6 @@ struct TodosGruposView: View {
     NavigationStack {
         TodosGruposView()
     }
+    .environment(OverlayPresenter())
     .modelContainer(DadosDeExemplo.container)
 }

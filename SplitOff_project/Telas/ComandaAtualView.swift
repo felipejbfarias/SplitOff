@@ -13,6 +13,7 @@ import SwiftData
 // Consumos: total, progresso do pagamento e a conta de cada participante.
 struct ComandaAtualView: View {
     @Environment(\.modelContext) private var context
+    @Environment(OverlayPresenter.self) private var overlay
     private enum Aba: String, CaseIterable {
         case pedidos = "Pedidos"
         case consumos = "Consumos"
@@ -23,8 +24,8 @@ struct ComandaAtualView: View {
 
     @State private var aba: Aba = .pedidos
     @State private var mostrarPagamento = false
-    @State private var mostrarEncerramento = false
     @State private var mostrarNovoPedido = false
+    @State private var mensagemErro: String?
 
     private var comanda: Comanda? { comandasAtivas.first }
 
@@ -34,19 +35,6 @@ struct ComandaAtualView: View {
 
             if let comanda {
                 conteudo(comanda)
-            }
-
-            if mostrarEncerramento, let comanda {
-                PopUPConfirmacao(
-                    titulo: "Encerrar Comanda",
-                    mensagem: "Ao encerrar, quem pagou a mais vira credor e quem pagou a menos vira devedor no grupo.",
-                    textoBotao: "Encerrar Comanda",
-                    aoConfirmar: {
-                        mostrarEncerramento = false
-                        encerrarComanda(comanda)
-                    },
-                    aoCancelar: { mostrarEncerramento = false }
-                )
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -79,6 +67,14 @@ struct ComandaAtualView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.top, 12)
+
+            if let mensagemErro {
+                Text(mensagemErro)
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
 
             ScrollView {
                 switch aba {
@@ -127,12 +123,28 @@ struct ComandaAtualView: View {
     private func rodape(_ comanda: Comanda) -> some View {
         BotaoSimples1(titulo: comanda.podeFechar ? "Encerrar Comanda" : "Pagar") {
             if comanda.podeFechar {
-                mostrarEncerramento = true
+                confirmarEncerramento(comanda)
             } else {
                 mostrarPagamento = true
             }
         }
         .padding(.bottom, 12)
+    }
+
+    // Popup na raiz para escurecer a tela inteira
+    private func confirmarEncerramento(_ comanda: Comanda) {
+        overlay.mostrar(
+            PopUPConfirmacao(
+                titulo: "Encerrar Comanda",
+                mensagem: "Ao encerrar, quem pagou a mais vira credor e quem pagou a menos vira devedor no grupo.",
+                textoBotao: "Encerrar Comanda",
+                aoConfirmar: {
+                    overlay.esconder()
+                    encerrarComanda(comanda)
+                },
+                aoCancelar: { overlay.esconder() }
+            )
+        )
     }
 
     
@@ -151,14 +163,14 @@ struct ComandaAtualView: View {
         mostrarNovoPedido = true
     }
 
-    // Redirecionar para a tela de encerramento da comanda.
+    // Fecha a comanda e acerta os saldos do grupo.
     private func encerrarComanda(_ comanda: Comanda) {
         let crud = CRUD(context: context)
 
         do {
             try crud.fecharComanda(comanda)
         } catch {
-            print("Erro ao encerrar comanda: \(error.localizedDescription)")
+            mensagemErro = error.localizedDescription
         }
     }
 }
@@ -181,5 +193,6 @@ struct ComandaAtualView: View {
     return NavigationStack {
         ComandaAtualView()
     }
+    .environment(OverlayPresenter())
     .modelContainer(DadosDeExemplo.container)
 }

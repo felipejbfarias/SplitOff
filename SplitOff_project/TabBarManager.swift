@@ -13,14 +13,39 @@ enum AbaPrincipal: Hashable {
     case comanda, grupos, busca
 }
 
+@Observable
+final class OverlayPresenter {
+    var conteudo: AnyView?
+
+    func mostrar<Conteudo: View>(_ conteudo: Conteudo) {
+        self.conteudo = AnyView(conteudo)
+    }
+
+    func esconder() {
+        conteudo = nil
+    }
+}
+
 // Monta a TabView
 struct TabBarManager: View {
     // Se tem comanda ativa, a aba Comanda mostra ela, senão, o histórico de comandas
     @Query(filter: #Predicate<Comanda> { $0.ativa }) private var comandasAtivas: [Comanda]
 
     @State private var aba: AbaPrincipal = .comanda
+    @State private var overlay = OverlayPresenter()
 
     var body: some View {
+        ZStack {
+            tabs
+
+            if let conteudo = overlay.conteudo {
+                conteudo
+            }
+        }
+        .environment(overlay)
+    }
+
+    private var tabs: some View {
         TabView(selection: $aba) {
             Tab("Comanda", systemImage: "receipt.fill", value: AbaPrincipal.comanda) {
                 NavigationStack {

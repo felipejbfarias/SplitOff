@@ -21,6 +21,7 @@ struct SheetEditarGrupo: View {
 
     @State private var nomeGrupo: String
     @State private var pessoasExistentes: [Pessoa]
+    @State private var pessoasRemovidas: [Pessoa] = []
     @State private var novasPessoas: [String] = []
     @State private var novoNomePessoa = ""
 
@@ -36,7 +37,7 @@ struct SheetEditarGrupo: View {
         self.grupo = grupo
         _nomeGrupo = State(initialValue: grupo.nome)
         _fotoSelecionada = State(initialValue: grupo.foto)
-        _pessoasExistentes = State(initialValue: grupo.pessoas)
+        _pessoasExistentes = State(initialValue: grupo.pessoas.filter { $0.nome != CRUD.nomeVoce })
     }
 
     private var podeSalvar: Bool {
@@ -66,20 +67,17 @@ struct SheetEditarGrupo: View {
                         }
 
                         Section("Membros") {
+                            // "Você" é obrigatório em todo grupo
+                            Text("Você")
+                                .foregroundStyle(.secondary)
+
                             ForEach(pessoasExistentes, id: \.id) { pessoa in
                                 Text(pessoa.nome)
                             }
                             .onDelete { indexSet in
                                 guard let index = indexSet.first else { return }
 
-                                let pessoa = pessoasExistentes[index]
-
-                                if pessoa.nome == CRUD.nomeVoce {
-                                    mensagemErro = "O \"Você\" não pode ser removido."
-                                    return
-                                }
-
-                                pessoaParaExcluir = pessoa
+                                pessoaParaExcluir = pessoasExistentes[index]
                                 mostrarPopUpExcluir = true
                             }
 
@@ -128,10 +126,10 @@ struct SheetEditarGrupo: View {
             if mostrarPopUpExcluir, let pessoaParaExcluir {
                 PopUPDestrutivo(
                     titulo: "Remover \(pessoaParaExcluir.nome)?",
-                    mensagem: "Essa pessoa será removida do grupo.",
+                    mensagem: "Essa pessoa sai do grupo quando você salvar as alterações.",
                     textoBotao: "Remover",
                     aoConfirmar: {
-                        removerPessoaConfirmada(pessoaParaExcluir)
+                        marcarRemocao(pessoaParaExcluir)
                     },
                     aoCancelar: {
                         mostrarPopUpExcluir = false
@@ -189,18 +187,13 @@ struct SheetEditarGrupo: View {
         novoNomePessoa = ""
     }
 
-    private func removerPessoaConfirmada(_ pessoa: Pessoa) {
-        let crud = CRUD(context: context)
+    // Só marca: a remoção de verdade acontece no Salvar
+    private func marcarRemocao(_ pessoa: Pessoa) {
+        pessoasRemovidas.append(pessoa)
+        pessoasExistentes.removeAll { $0.id == pessoa.id }
 
-        do {
-            try crud.removerPessoa(pessoa)
-            pessoasExistentes.removeAll { $0.id == pessoa.id }
-
-            mostrarPopUpExcluir = false
-            pessoaParaExcluir = nil
-        } catch {
-            mensagemErro = error.localizedDescription
-        }
+        mostrarPopUpExcluir = false
+        pessoaParaExcluir = nil
     }
 
     private func salvarGrupo() {
@@ -211,6 +204,10 @@ struct SheetEditarGrupo: View {
         do {
             grupo.foto = fotoSelecionada
             try crud.atualizarGrupo(grupo, nome: nomeGrupo)
+
+            for pessoa in pessoasRemovidas {
+                try crud.removerPessoa(pessoa)
+            }
 
             for nome in novasPessoas {
                 try crud.criarPessoa(nome: nome, grupo: grupo)

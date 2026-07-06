@@ -13,21 +13,46 @@ struct BuscaView: View {
     @Query private var comandas: [Comanda]
 
     @State private var modo: ModoBusca = .nome
-    @State private var buscaNome = ""
-    @State private var buscaValor: Decimal = 0
-    @State private var resultados: [Comanda] = []
+    @State private var textoBusca = ""
     @State private var comandaSelecionada: Comanda?
+
+    // A busca cobre só o histórico: a comanda ativa fica de fora.
+    private var comandasFechadas: [Comanda] {
+        comandas.filter { !$0.ativa }
+    }
+
+    private var valorBuscado: Decimal {
+        let numerico = textoBusca
+            .replacingOccurrences(of: ",", with: ".")
+            .filter { "0123456789.".contains($0) }
+        return Decimal(string: numerico) ?? 0
+    }
 
     private var buscaVazia: Bool {
         switch modo {
-            case .nome: buscaNome.trimmingCharacters(in: .whitespaces).isEmpty
-            case .valor: buscaValor == 0
+            case .nome: textoBusca.trimmingCharacters(in: .whitespaces).isEmpty
+            case .valor: valorBuscado == 0
+        }
+    }
+
+    private var resultados: [Comanda] {
+        switch modo {
+            case .nome:
+                let busca = textoBusca.trimmingCharacters(in: .whitespaces)
+                return busca.isEmpty ? comandasFechadas : comandasFechadas.filter {
+                    nomeDoLugar($0).localizedStandardContains(busca)
+                }
+            case .valor:
+                return valorBuscado == 0 ? comandasFechadas : comandasFechadas.filter {
+                    guard let gasto = $0.gastoDoVoce else { return false }
+                    return gasto <= valorBuscado
+                }
         }
     }
 
     // O que os cards destacam em accent, conforme o modo ativo.
     private var destaque: DestaqueBusca {
-        modo == .nome ? .nome(buscaNome) : (buscaValor > 0 ? .valor : .nenhum)
+        modo == .nome ? .nome(textoBusca) : (valorBuscado > 0 ? .valor : .nenhum)
     }
 
     var body: some View {
@@ -62,21 +87,21 @@ struct BuscaView: View {
         .background(Color(.systemGroupedBackground))
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom) {
-            // Sempre presente na aba de busca; ele abre o teclado sozinho ao aparecer
-            // e o X (com a busca vazia) só recolhe o teclado.
-            FiltrosBusca(
-                comandas: comandas,
-                modo: $modo,
-                buscaNome: $buscaNome,
-                buscaValor: $buscaValor,
-                resultados: $resultados
-            )
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            SeletorModoBusca(modo: $modo)
         }
+        .searchable(
+            text: $textoBusca,
+            prompt: modo == .nome ? "Buscar lugar" : "Valor máximo que você gastou"
+        )
+        .keyboardType(modo == .valor ? .decimalPad : .default)
         .sheet(item: $comandaSelecionada) { comanda in
             SheetHistoricoRole(comanda: comanda)
         }
+    }
+
+    // Nome exibido do lugar da comanda, igual aos títulos do app.
+    private func nomeDoLugar(_ comanda: Comanda) -> String {
+        comanda.restaurante?.nome ?? comanda.nome
     }
 
     private var lupaGigante: some View {
@@ -91,6 +116,41 @@ struct BuscaView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct SeletorModoBusca: View {
+    @Binding var modo: ModoBusca
+    @Environment(\.isSearching) private var buscando
+
+    var body: some View {
+        if buscando {
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    ForEach(ModoBusca.allCases, id: \.self) { opcao in
+                        Button {
+                            withAnimation(.snappy) { modo = opcao }
+                        } label: {
+                            Image(systemName: opcao.simbolo)
+                                .font(.subheadline.weight(modo == opcao ? .semibold : .regular))
+                                .foregroundStyle(modo == opcao ? Color.white : .secondary)
+                                .frame(width: 52, height: 40)
+                                .glassEffect(
+                                    modo == opcao ? .regular.tint(Color.accentColor) : .regular,
+                                    in: .capsule
+                                )
+                                .contentShape(.capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            // O campo de busca do sistema flutua sobre essa área;
+            // o respiro levanta as pills para cima dele.
+            .padding(.bottom, 72)
+        }
     }
 }
 

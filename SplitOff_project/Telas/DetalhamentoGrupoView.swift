@@ -10,6 +10,7 @@ import SwiftData
 
 struct DetalhamentoGrupoView: View {
     @Environment(\.modelContext) private var context
+    @Environment(OverlayPresenter.self) private var overlay
 
     @Bindable var grupo: Grupo
 
@@ -21,8 +22,13 @@ struct DetalhamentoGrupoView: View {
     @State private var aba: Aba = .historico
     @State private var mostrarEditarGrupo = false
     @State private var mostrarQuitarDividas = false
-    @State private var comandaParaApagar: Comanda?
     @State private var comandaHistoricoSelecionada: Comanda?
+    @State private var mensagemErro: String?
+
+    // O grupo Você é só do dono: sem editar, sem aba de membros e sem quitação.
+    private var ehGrupoVoce: Bool {
+        grupo.nome == CRUD.nomeVoce
+    }
 
     var body: some View {
         ZStack {
@@ -32,7 +38,7 @@ struct DetalhamentoGrupoView: View {
             VStack(spacing: 0) {
                 TopBar(
                     mostrarVoltar: true,
-                    simboloDireita: "person.fill.badge.plus"
+                    simboloDireita: ehGrupoVoce ? nil : "person.fill.badge.plus"
                 ) {
                     mostrarEditarGrupo = true
                 }
@@ -43,14 +49,16 @@ struct DetalhamentoGrupoView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
 
-                Picker("Aba", selection: $aba) {
-                    ForEach(Aba.allCases, id: \.self) { aba in
-                        Text(aba.rawValue).tag(aba)
+                if !ehGrupoVoce {
+                    Picker("Aba", selection: $aba) {
+                        ForEach(Aba.allCases, id: \.self) { aba in
+                            Text(aba.rawValue).tag(aba)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.top, 12)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 12)
 
                 ScrollView {
                     switch aba {
@@ -61,7 +69,7 @@ struct DetalhamentoGrupoView: View {
                     }
                 }
 
-                if aba == .membros {
+                if aba == .membros, !ehGrupoVoce {
                     BotaoSimples1(titulo: "Quitar") {
                         mostrarQuitarDividas = true
                     }
@@ -69,13 +77,6 @@ struct DetalhamentoGrupoView: View {
                 }
             }
 
-            if let comandaParaApagar {
-                PopUPDestrutivo.apagarComanda(comandaParaApagar) {
-                    removerComanda(comandaParaApagar)
-                } aoCancelar: {
-                    self.comandaParaApagar = nil
-                }
-            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $mostrarEditarGrupo) {
@@ -104,11 +105,18 @@ struct DetalhamentoGrupoView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 8)
 
+            if let mensagemErro {
+                Text(mensagemErro)
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+            }
+
             ForEach(comandasOrdenadas) { comanda in
                 RowGrupoHistorico(comanda: comanda) {
                     comandaHistoricoSelecionada = comanda
                 } aoRemover: {
-                    comandaParaApagar = comanda
+                    confirmarRemocao(comanda)
                 }
             }
         }
@@ -116,61 +124,27 @@ struct DetalhamentoGrupoView: View {
     }
 
     private var abaMembros: some View {
-        LazyVStack(spacing: 0) {
-            ForEach(pessoasOrdenadas) { pessoa in
-                HStack {
-                    Text(pessoa.nome)
-                        .font(.body)
-
-                    Spacer()
-
-                    Text(textoSaldo(pessoa))
-                        .font(.subheadline)
-                        .foregroundStyle(corSaldo(pessoa))
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-
-                if pessoa.id != pessoasOrdenadas.last?.id {
-                    Divider()
-                        .padding(.leading, 16)
-                }
-            }
-        }
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
-        .padding()
+        ListaRowSaldo(pessoas: grupo.pessoas)
+            .padding()
     }
 
+    // A comanda ativa vive na aba Comanda até ser encerrada.
     private var comandasOrdenadas: [Comanda] {
-        grupo.comandas.sorted { $0.data > $1.data }
+        grupo.comandas
+            .filter { !$0.ativa }
+            .sorted { $0.data > $1.data }
     }
 
-    private var pessoasOrdenadas: [Pessoa] {
-        grupo.pessoas.sorted {
-            if $0.nome == CRUD.nomeVoce { return true }
-            if $1.nome == CRUD.nomeVoce { return false }
-            return $0.nome < $1.nome
-        }
-    }
-
-    private func textoSaldo(_ pessoa: Pessoa) -> String {
-        if pessoa.saldo < 0 {
-            return "Deve \(abs(pessoa.saldo).formatted(.currency(code: "BRL")))"
-        } else if pessoa.saldo > 0 {
-            return "Emprestou \(pessoa.saldo.formatted(.currency(code: "BRL")))"
-        } else {
-            return "Quitado"
-        }
-    }
-
-    private func corSaldo(_ pessoa: Pessoa) -> Color {
-        if pessoa.saldo < 0 {
-            return .red
-        } else if pessoa.saldo > 0 {
-            return .green
-        } else {
-            return .secondary
-        }
+    // Popup na raiz para escurecer a tela inteira
+    private func confirmarRemocao(_ comanda: Comanda) {
+        overlay.mostrar(
+            PopUPDestrutivo.apagarComanda(comanda) {
+                overlay.esconder()
+                removerComanda(comanda)
+            } aoCancelar: {
+                overlay.esconder()
+            }
+        )
     }
 
     private func removerComanda(_ comanda: Comanda) {
@@ -178,9 +152,8 @@ struct DetalhamentoGrupoView: View {
 
         do {
             try crud.removerComanda(comanda)
-            comandaParaApagar = nil
         } catch {
-            print("Erro ao remover comanda: \(error)")
+            mensagemErro = error.localizedDescription
         }
     }
 }
@@ -192,5 +165,6 @@ struct DetalhamentoGrupoView: View {
     NavigationStack {
         DetalhamentoGrupoView(grupo: grupo)
     }
+    .environment(OverlayPresenter())
     .modelContainer(DadosDeExemplo.container)
 }
