@@ -20,7 +20,7 @@ struct BotaoSimples1: View {
         .controlSize(.large)
         .buttonStyle(.glassProminent)
         .tint(.pink)
-        .padding(.horizontal, 12)
+        .padding(12)
     }
 }
 

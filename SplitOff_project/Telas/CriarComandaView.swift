@@ -30,6 +30,10 @@ struct CriarComandaView: View {
         grupos.first { $0.nome == grupoSelecionado }
     }
 
+    private var lugarAtual: Restaurante? {
+        restaurantes.first { $0.nome == lugarSelecionado }
+    }
+
     // Pessoas selecionáveis do grupo escolhido
     private var outrosDoGrupo: [Pessoa] {
         (grupoAtual?.pessoas ?? [])
@@ -37,8 +41,11 @@ struct CriarComandaView: View {
             .sorted { $0.nome < $1.nome }
     }
 
+    // Nome, grupo e lugar
     private var podeCriar: Bool {
-        !nome.trimmingCharacters(in: .whitespaces).isEmpty && grupoAtual != nil
+        !nome.trimmingCharacters(in: .whitespaces).isEmpty
+            && grupoAtual != nil
+            && lugarAtual != nil
     }
 
     var body: some View {
@@ -129,10 +136,9 @@ struct CriarComandaView: View {
 
     // Cria a comanda já ativa com os participantes escolhidos
     private func criarComanda() {
-        guard let grupo = grupoAtual else { return }
+        guard let grupo = grupoAtual, let restaurante = lugarAtual else { return }
 
         let crud = CRUD(context: modelContext)
-        let restaurante = restaurantes.first { $0.nome == lugarSelecionado }
 
         do {
             // O criarComanda já coloca você como participante.
