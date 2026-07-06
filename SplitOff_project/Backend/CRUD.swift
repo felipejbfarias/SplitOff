@@ -21,6 +21,9 @@ enum CRUDErro: LocalizedError {
     case nomeReservado
     case voceImutavel
     case grupoVoceImutavel
+    case pagamentoExcedeTotal(restante: Decimal)
+    case grupoDuplicado
+    case lugarDuplicado
 
     var errorDescription: String? {
         switch self {
@@ -62,6 +65,12 @@ enum CRUDErro: LocalizedError {
             return "O \"Você\" não pode ser renomeado ou removido."
         case .grupoVoceImutavel:
             return "O grupo \"Você\" não pode ser renomeado ou removido."
+        case let .pagamentoExcedeTotal(restante):
+            return "O pagamento passa do total da comanda. Falta pagar \(restante.formatted(.currency(code: "BRL")))."
+        case .grupoDuplicado:
+            return "Já existe um grupo com esse nome."
+        case .lugarDuplicado:
+            return "Já existe um lugar com esse nome."
         }
     }
 }
@@ -90,11 +99,16 @@ final class CRUD {
         try salvar()
     }
 
-    // Cria um grupo, já com o seu próprio "Você" dentro.
+    // Cria um grupo, já com o seu próprio "Você" dentro. Nomes não podem repetir.
     @discardableResult
     func criarGrupo(nome: String, foto: Data? = nil) throws -> Grupo {
         let nomeGrupo = try nomeValidado(nome)
         guard !ehNomeReservado(nomeGrupo) else { throw CRUDErro.nomeReservado }
+
+        let grupos = try context.fetch(FetchDescriptor<Grupo>())
+        guard !grupos.contains(where: { mesmoNome($0.nome, nomeGrupo) }) else {
+            throw CRUDErro.grupoDuplicado
+        }
 
         let grupo = Grupo(nome: nomeGrupo, foto: foto)
         context.insert(grupo)
@@ -115,11 +129,18 @@ final class CRUD {
         return pessoa
     }
 
-    // Cria um lugar já com um cardápio vazio associado.
+    // Cria um lugar já com um cardápio vazio associado. Nomes não podem repetir.
     @discardableResult
     func criarLugar(nome: String, nomeCardapio: String = "Cardápio") throws -> Restaurante {
+        let nomeLugar = try nomeValidado(nome)
+
+        let lugares = try context.fetch(FetchDescriptor<Restaurante>())
+        guard !lugares.contains(where: { mesmoNome($0.nome, nomeLugar) }) else {
+            throw CRUDErro.lugarDuplicado
+        }
+
         let cardapio = Cardapio(nome: try nomeValidado(nomeCardapio))
-        let restaurante = Restaurante(nome: try nomeValidado(nome), cardapio: cardapio)
+        let restaurante = Restaurante(nome: nomeLugar, cardapio: cardapio)
         context.insert(restaurante)
         try salvar()
         return restaurante
@@ -227,10 +248,16 @@ final class CRUD {
     }
 
     // Soma mais um pagamento ao total já pago pelo participante na comanda.
+    // A soma de todos os pagamentos nunca pode passar do total da conta.
     func registrarPagamento(_ valorPago: Decimal, para participante: ParticipanteComanda) throws {
         guard valorPago >= 0 else { throw CRUDErro.pagamentoNegativo }
         guard let comanda = participante.comanda else { throw CRUDErro.participanteForaDaComanda }
         try validarComandaAtiva(comanda)
+
+        let restante = comanda.valorTotal - comanda.valorPago
+        guard valorPago <= restante + Comanda.limiarFechamento else {
+            throw CRUDErro.pagamentoExcedeTotal(restante: max(0, restante))
+        }
 
         participante.valorPago += valorPago
         try salvar()
@@ -371,7 +398,12 @@ final class CRUD {
 
     // "você", "VOCÊ", "Voce"... todas as variações são reservadas.
     private func ehNomeReservado(_ nome: String) -> Bool {
-        nome.compare(Self.nomeVoce, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        mesmoNome(nome, Self.nomeVoce)
+    }
+
+    // Compara nomes ignorando caixa e acentos ("mamute" == "Mamute").
+    private func mesmoNome(_ um: String, _ outro: String) -> Bool {
+        um.compare(outro, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 
     private func nomeValidado(_ nome: String) throws -> String {

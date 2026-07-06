@@ -68,7 +68,7 @@ struct SheetCriarLugar: View {
     private var botaoCriar: some View {
         if podeCriar {
             Button(action: criarItem) {
-                Text("Criar item")
+                Text("Criar Lugar")
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
             }
@@ -76,7 +76,7 @@ struct SheetCriarLugar: View {
             .tint(.accentColor)
         } else {
             Button {} label: {
-                Text("Criar item")
+                Text("Criar Lugar")
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)

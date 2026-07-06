@@ -40,7 +40,7 @@
 		9E11BE962FF9D8AE004E2A5E /* ExtensaoLiveActivityExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ExtensaoLiveActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E11BE982FF9D8AE004E2A5E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		9E11BE9A2FF9D8AE004E2A5E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		A2C7B81B2FEDA6CE007049C6 /* SplitOff_project.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SplitOff_project.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2C7B81B2FEDA6CE007049C6 /* SplitOff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SplitOff.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -123,7 +123,7 @@
 		A2C7B81C2FEDA6CE007049C6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A2C7B81B2FEDA6CE007049C6 /* SplitOff_project.app */,
+				A2C7B81B2FEDA6CE007049C6 /* SplitOff.app */,
 				9E11BE962FF9D8AE004E2A5E /* ExtensaoLiveActivityExtension.appex */,
 			);
 			name = Products;
@@ -154,9 +154,9 @@
 			productReference = 9E11BE962FF9D8AE004E2A5E /* ExtensaoLiveActivityExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		A2C7B81A2FEDA6CE007049C6 /* SplitOff_project */ = {
+		A2C7B81A2FEDA6CE007049C6 /* SplitOff */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A2C7B8262FEDA6CE007049C6 /* Build configuration list for PBXNativeTarget "SplitOff_project" */;
+			buildConfigurationList = A2C7B8262FEDA6CE007049C6 /* Build configuration list for PBXNativeTarget "SplitOff" */;
 			buildPhases = (
 				A2C7B8172FEDA6CE007049C6 /* Sources */,
 				A2C7B8182FEDA6CE007049C6 /* Frameworks */,
@@ -171,11 +171,11 @@
 			fileSystemSynchronizedGroups = (
 				A2C7B81D2FEDA6CE007049C6 /* SplitOff_project */,
 			);
-			name = SplitOff_project;
+			name = SplitOff;
 			packageProductDependencies = (
 			);
 			productName = SplitOff_project;
-			productReference = A2C7B81B2FEDA6CE007049C6 /* SplitOff_project.app */;
+			productReference = A2C7B81B2FEDA6CE007049C6 /* SplitOff.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -210,7 +210,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A2C7B81A2FEDA6CE007049C6 /* SplitOff_project */,
+				A2C7B81A2FEDA6CE007049C6 /* SplitOff */,
 				9E11BE952FF9D8AE004E2A5E /* ExtensaoLiveActivityExtension */,
 			);
 		};
@@ -529,7 +529,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A2C7B8262FEDA6CE007049C6 /* Build configuration list for PBXNativeTarget "SplitOff_project" */ = {
+		A2C7B8262FEDA6CE007049C6 /* Build configuration list for PBXNativeTarget "SplitOff" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A2C7B8272FEDA6CE007049C6 /* Debug */,

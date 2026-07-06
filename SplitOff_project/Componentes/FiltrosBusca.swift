@@ -52,15 +52,18 @@ struct FiltrosBusca: View {
     var body: some View {
         VStack(spacing: 12) {
             seletorModo
-            campoBusca
+
+            // A busca por nome é digitada no campo nativo da tab bar
+            if modo == .valor {
+                campoBusca
+            }
         }
         .onAppear {
             atualizarResultados()
-            foco = modo
         }
         .onChange(of: modo) {
             atualizarResultados()
-            Task { foco = modo }
+            Task { foco = modo == .valor ? .valor : nil }
         }
         .onChange(of: buscaNome) { atualizarResultados() }
         .onChange(of: valorTexto) {
@@ -105,14 +108,7 @@ struct FiltrosBusca: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
 
-                if modo == .nome {
-                    TextField("Buscar lugar", text: $buscaNome)
-                        .focused($foco, equals: .nome)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } else {
-                    campoValor
-                }
+                campoValor
             }
             .frame(height: 22)
             .padding(.horizontal, 14)

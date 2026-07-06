@@ -99,11 +99,11 @@ struct SheetPagamentoComanda: View {
             valorTexto = ""
         }
         
-        // Limita o valor ao total da comanda
+        // Limita o valor ao que ainda falta pagar na comanda
         .onChange(of: valorTexto) {
             let digitos = String(valorTexto.filter(\.isNumber).prefix(8))
             var centavos = Int(digitos) ?? 0
-            let maximo = emCentavos(comanda.valorTotal)
+            let maximo = emCentavos(max(0, comanda.valorTotal - comanda.valorPago))
             if centavos > maximo { centavos = maximo }
             let corrigido = centavos == 0 ? digitos : String(centavos)
             if corrigido != valorTexto { valorTexto = corrigido }
