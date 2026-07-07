@@ -92,7 +92,8 @@ struct DetalhamentoGrupoView: View {
 
     private var abaHistorico: some View {
         LazyVStack(alignment: .leading, spacing: 16) {
-            Text("Maiores dívidas")
+            // No grupo Você não há dívidas, o card vira o total gasto nas comandas.
+            Text(ehGrupoVoce ? "Total gasto" : "Maiores dívidas")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
