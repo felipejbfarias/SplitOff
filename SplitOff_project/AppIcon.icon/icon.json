@@ -19,14 +19,13 @@
     {
       "layers" : [
         {
-          "hidden" : false,
-          "image-name" : "4 3 2.svg",
-          "name" : "4 3 2",
+          "image-name" : "4 3 1.png",
+          "name" : "4 3 1",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
               0,
-              5.684341886080802e-14
+              -8
             ]
           }
         }

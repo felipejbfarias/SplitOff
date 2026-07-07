@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-// Mostra as 3 maiores dívidas do grupo
+// Mostra as 3 maiores dívidas do grupo. No grupo pessoal "Você" não há dívidas, então o card vira o total já gasto nas comandas.
 struct CardDeveMais: View {
     let grupo: Grupo
 
@@ -16,6 +16,15 @@ struct CardDeveMais: View {
     private let alturaMaxima: CGFloat = 190
     private let alturaMinima: CGFloat = 110
     private let alturaCard: CGFloat = 240
+
+    private var ehGrupoVoce: Bool {
+        grupo.nome == CRUD.nomeVoce
+    }
+
+    // Tudo que o usuário já gastou nas comandas do grupo, com a taxa de serviço.
+    private var totalGasto: Decimal {
+        grupo.comandas.reduce(0) { $0 + $1.valorTotal }
+    }
 
     // Uma pessoa devendo, já com o valor positivo da dívida.
     private struct Devedor: Identifiable {
@@ -46,7 +55,9 @@ struct CardDeveMais: View {
 
     var body: some View {
         Group {
-            if ordemPodio.isEmpty {
+            if ehGrupoVoce {
+                conteudoTotalGasto
+            } else if ordemPodio.isEmpty {
                 Text("Ninguém está devendo")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -62,6 +73,27 @@ struct CardDeveMais: View {
         .frame(maxWidth: .infinity)
         .frame(height: alturaCard)
         .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
+    }
+
+    // Total gasto pelo usuário no grupo Você
+    private var conteudoTotalGasto: some View {
+        let altura = alturaMaxima
+        return Image("maca_inteira")
+            .resizable()
+            .scaledToFit()
+            .frame(height: altura)
+            .overlay {
+                VStack(spacing: 2) {
+                    Text("Você já gastou")
+                    Text(moeda(totalGasto))
+                }
+                .font(.system(size: altura * 0.11, weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .padding(.horizontal, altura * 0.1)
+                .offset(y: altura * 0.15)
+            }
     }
 
     // Maçã com nome e valor cravados no corpo.
