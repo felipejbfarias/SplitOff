@@ -10,9 +10,22 @@ import SwiftData
 
 @main
 struct SplitOff_projectApp: App {
+    @AppStorage("onboardingConcluido") private var onboardingConcluido = false
+
     var body: some Scene {
         WindowGroup {
-            TabBarManager()
+            ZStack {
+                TabBarManager()
+
+                if !onboardingConcluido {
+                    OnboardingView {
+                        withAnimation(.easeOut(duration: 0.35)) {
+                            onboardingConcluido = true
+                        }
+                    }
+                    .transition(.opacity)
+                }
+            }
         }
         .modelContainer(Persistencia.container)
     }
