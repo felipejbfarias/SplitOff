@@ -82,7 +82,7 @@ extension RowExpandivel {
         )
     }
 
-    // Conta de uma pessoa durante a comanda: itens, valor por dono e taxa.
+    // Conta de uma pessoa durante a comanda: itens, valor por dono e extras.
     init(conta participante: ParticipanteComanda) {
         self.init(
             titulo: participante.nomePessoa,
@@ -120,14 +120,19 @@ extension RowExpandivel {
         )
     }
 
-    // Detalhes de consumo de uma pessoa: itens + taxa.
+    // Detalhes de consumo de uma pessoa: itens + extras.
     private static func detalhesConta(_ participante: ParticipanteComanda, incluirTotal: Bool = false) -> [DetalheExpandivel] {
         var linhas = participante.itensConsumidos.map {
             DetalheExpandivel(texto: "\(Self.prefixoQuantidade(de: $0)) \($0.nome)", valor: $0.precoPorDono)
         }
-        
-        // A taxa
-        linhas.append(DetalheExpandivel(texto: "Taxa de serviço 10%", valor: participante.taxaServicoAtual))
+
+        if participante.taxaServicoAtual > 0 {
+            linhas.append(DetalheExpandivel(texto: "Taxa de serviço 10%", valor: participante.taxaServicoAtual))
+        }
+
+        if participante.couvertArtisticoAtual > 0 {
+            linhas.append(DetalheExpandivel(texto: "Couvert artístico", valor: participante.couvertArtisticoAtual))
+        }
 
         if incluirTotal {
             let total = linhas.reduce(0) { $0 + $1.valor }

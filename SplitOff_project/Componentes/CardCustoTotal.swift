@@ -22,15 +22,19 @@ struct CardCustoTotal: View {
                 .font(.system(size: 34, weight: .bold))
                 .contentTransition(.numericText())
 
-            HStack {
-                Text("Conta: \(moeda(comanda.subtotal))")
-                Spacer()
-                Text("Taxa de serviço: \(moeda(comanda.taxaServico))")
+            VStack(spacing: 8) {
+                linha("Conta", valor: comanda.subtotal)
+
+                if comanda.cobraTaxaServico {
+                    linha("Taxa de serviço", valor: comanda.taxaServico)
+                }
+
+                if comanda.valorCouvertPorPessoa > 0 {
+                    linha("Couvert artístico", valor: comanda.couvertArtistico)
+                }
             }
             .font(.system(size: 17, weight: .regular))
             .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
         .padding(24)
@@ -39,6 +43,16 @@ struct CardCustoTotal: View {
 
     private func moeda(_ valor: Decimal) -> String {
         valor.formatted(.currency(code: "BRL"))
+    }
+
+    private func linha(_ titulo: String, valor: Decimal) -> some View {
+        HStack {
+            Text(titulo)
+            Spacer()
+            Text(moeda(valor))
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
 }
 

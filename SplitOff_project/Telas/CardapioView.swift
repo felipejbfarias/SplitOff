@@ -17,6 +17,7 @@ struct CardapioView: View {
     @State private var linhas: [LinhaStepper] = []
     @State private var mostrarEditar = false
     @State private var irParaDivisao = false
+    @State private var busca = ""
 
     private var cardapio: Cardapio? {
         comanda.restaurante?.cardapio
@@ -42,10 +43,14 @@ struct CardapioView: View {
                 .padding(.top, 28)
 
             if let cardapio {
+                campoBusca
+                    .padding(.horizontal)
+                    .padding(.top, 16)
+
                 ScrollView {
-                    ListaRowsStepper(linhas: $linhas, cardapio: cardapio)
+                    ListaRowsStepper(linhas: $linhas, cardapio: cardapio, filtro: busca)
                         .padding()
-                        .padding(.top, 12)
+                        .padding(.top, 4)
                 }
 
                 BotaoSimples1(titulo: "Encerrar Seleção") { irParaDivisao = true }
@@ -72,6 +77,29 @@ struct CardapioView: View {
         .navigationDestination(isPresented: $irParaDivisao) {
             ItensDividirView(comanda: comanda, autor: autor, escolhas: escolhidos, aoConcluir: aoConcluir)
         }
+    }
+
+    // Busca para cardápios grandes
+    private var campoBusca: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField("Buscar no cardápio", text: $busca)
+
+            if !busca.isEmpty {
+                Button {
+                    busca = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color(.secondarySystemGroupedBackground), in: .capsule)
     }
 
     private func montarLinhas() {

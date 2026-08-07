@@ -13,18 +13,23 @@ final class ParticipanteComanda {
     // Itens que esta pessoa divide nesta comanda (inverso de ItemPedido.donos).
     var itensConsumidos: [ItemPedido] = []
 
-    // Total dos itens que esta pessoa divide, sem taxa de serviço.
+    // Total dos itens que esta pessoa divide, sem extras da comanda.
     var subtotalContaAtual: Decimal {
         itensConsumidos.reduce(0) { $0 + $1.precoPorDono }
     }
 
     var taxaServicoAtual: Decimal {
-        subtotalContaAtual * Comanda.taxaServicoPercentual
+        guard comanda?.cobraTaxaServico == true else { return 0 }
+        return subtotalContaAtual * Comanda.taxaServicoPercentual
     }
 
-    // Total que esta pessoa deve, com taxa de serviço obrigatória.
+    var couvertArtisticoAtual: Decimal {
+        comanda?.valorCouvertPorPessoa ?? 0
+    }
+
+    // Total que esta pessoa deve, com os extras configurados na comanda.
     var contaAtual: Decimal {
-        subtotalContaAtual + taxaServicoAtual
+        subtotalContaAtual + taxaServicoAtual + couvertArtisticoAtual
     }
 
     init(
@@ -49,6 +54,8 @@ final class Comanda {
     var nome: String
     var data: Date = Date.now
     var ativa: Bool = false
+    var cobraTaxaServico: Bool = true
+    var valorCouvertPorPessoa: Decimal = 0
 
     @Relationship(deleteRule: .nullify, inverse: \Restaurante.comandas)
     var restaurante: Restaurante?
@@ -61,18 +68,23 @@ final class Comanda {
     @Relationship(deleteRule: .cascade, inverse: \Pedido.comanda)
     var pedidos: [Pedido] = []
 
-    // Valor dos itens antes da taxa de serviço.
+    // Valor dos itens antes dos extras.
     var subtotal: Decimal {
         pedidos.reduce(0) { $0 + $1.valorTotal }
     }
 
     var taxaServico: Decimal {
-        subtotal * Self.taxaServicoPercentual
+        guard cobraTaxaServico else { return 0 }
+        return subtotal * Self.taxaServicoPercentual
     }
 
-    // Valor cheio da comanda, já com a taxa de serviço obrigatória de 10%.
+    var couvertArtistico: Decimal {
+        valorCouvertPorPessoa * Decimal(participantes.count)
+    }
+
+    // Valor cheio da comanda, já com os extras configurados.
     var valorTotal: Decimal {
-        subtotal + taxaServico
+        subtotal + taxaServico + couvertArtistico
     }
 
     var valorPago: Decimal {
@@ -87,12 +99,16 @@ final class Comanda {
         nome: String,
         data: Date = Date.now,
         ativa: Bool = false,
+        cobraTaxaServico: Bool = true,
+        valorCouvertPorPessoa: Decimal = 0,
         restaurante: Restaurante? = nil,
         grupo: Grupo? = nil
     ) {
         self.nome = nome
         self.data = data
         self.ativa = ativa
+        self.cobraTaxaServico = cobraTaxaServico
+        self.valorCouvertPorPessoa = valorCouvertPorPessoa
         self.restaurante = restaurante
         self.grupo = grupo
     }

@@ -117,8 +117,17 @@ struct SheetPagamentoComanda: View {
     private func detalhamento(_ participante: ParticipanteComanda) -> some View {
         cartao {
             linha("Subtotal", direita: moeda(participante.subtotalContaAtual))
-            Divider().padding(.leading, 16)
-            linha("Taxa de serviço 10%", direita: moeda(participante.taxaServicoAtual))
+
+            if participante.taxaServicoAtual > 0 {
+                Divider().padding(.leading, 16)
+                linha("Taxa de serviço 10%", direita: moeda(participante.taxaServicoAtual))
+            }
+
+            if participante.couvertArtisticoAtual > 0 {
+                Divider().padding(.leading, 16)
+                linha("Couvert artístico", direita: moeda(participante.couvertArtisticoAtual))
+            }
+
             Divider().padding(.leading, 16)
             linhaValorPago
         }

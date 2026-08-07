@@ -20,6 +20,9 @@ struct CriarComandaView: View {
     @State private var lugarSelecionado: String?
     @State private var grupoSelecionado: String?
     @State private var pessoasSelecionadas: [Pessoa] = []
+    @State private var cobraTaxaServico = true
+    @State private var cobraCouvertArtistico = false
+    @State private var valorCouvertTexto = ""
 
     @State private var mostrarSelecionarPessoas = false
     @State private var mostrarCriarLugar = false
@@ -41,11 +44,20 @@ struct CriarComandaView: View {
             .sorted { $0.nome < $1.nome }
     }
 
+    private var valorCouvertPorPessoa: Decimal {
+        decimalDigitado(valorCouvertTexto) ?? 0
+    }
+
+    private var couvertInvalido: Bool {
+        cobraCouvertArtistico && valorCouvertPorPessoa <= 0
+    }
+
     // Nome, grupo e lugar
     private var podeCriar: Bool {
         !nome.trimmingCharacters(in: .whitespaces).isEmpty
             && grupoAtual != nil
             && lugarAtual != nil
+            && !couvertInvalido
     }
 
     var body: some View {
@@ -91,6 +103,8 @@ struct CriarComandaView: View {
                         ]
                     )
 
+                    extrasComanda
+
                     if let mensagemErro {
                         Text(mensagemErro)
                             .font(.subheadline)
@@ -134,6 +148,50 @@ struct CriarComandaView: View {
         }
     }
 
+    private var extrasComanda: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Extras")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                Toggle("Taxa de serviço 10%", isOn: $cobraTaxaServico)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 56)
+
+                Divider().padding(.leading, 16)
+
+                Toggle("Couvert artístico", isOn: $cobraCouvertArtistico)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 56)
+
+                if cobraCouvertArtistico {
+                    Divider().padding(.leading, 16)
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Valor por pessoa")
+                                .fontWeight(.medium)
+                        }
+
+                        Spacer()
+
+                        TextField("R$ 0,00", text: $valorCouvertTexto)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 110)
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 64)
+                }
+            }
+            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 20))
+        }
+    }
+
     // Cria a comanda já ativa com os participantes escolhidos
     private func criarComanda() {
         guard let grupo = grupoAtual, let restaurante = lugarAtual else { return }
@@ -142,7 +200,13 @@ struct CriarComandaView: View {
 
         do {
             // O criarComanda já coloca você como participante.
-            let comanda = try crud.criarComanda(nome: nome, grupo: grupo, restaurante: restaurante)
+            let comanda = try crud.criarComanda(
+                nome: nome,
+                grupo: grupo,
+                restaurante: restaurante,
+                cobraTaxaServico: cobraTaxaServico,
+                valorCouvertPorPessoa: cobraCouvertArtistico ? valorCouvertPorPessoa : 0
+            )
             for pessoa in pessoasSelecionadas where pessoa.nome != CRUD.nomeVoce {
                 try crud.adicionarParticipante(pessoa, a: comanda)
             }
@@ -152,6 +216,18 @@ struct CriarComandaView: View {
         } catch {
             mensagemErro = error.localizedDescription
         }
+    }
+
+    private func decimalDigitado(_ texto: String) -> Decimal? {
+        let normalizado = texto
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "R$", with: "")
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: ".")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalizado.isEmpty else { return nil }
+        return Decimal(string: normalizado)
     }
 }
 
