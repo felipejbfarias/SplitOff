@@ -161,13 +161,23 @@ final class CRUD {
         nome: String,
         grupo: Grupo,
         restaurante: Restaurante,
+        cobraTaxaServico: Bool = true,
+        valorCouvertPorPessoa: Decimal = 0,
         ativa: Bool = true
     ) throws -> Comanda {
         if ativa {
             try validarComandaAtivaUnica()
         }
+        try validarPreco(valorCouvertPorPessoa)
 
-        let comanda = Comanda(nome: try nomeValidado(nome), ativa: ativa, restaurante: restaurante, grupo: grupo)
+        let comanda = Comanda(
+            nome: try nomeValidado(nome),
+            ativa: ativa,
+            cobraTaxaServico: cobraTaxaServico,
+            valorCouvertPorPessoa: valorCouvertPorPessoa,
+            restaurante: restaurante,
+            grupo: grupo
+        )
         context.insert(comanda)
 
         // Você do grupo participa de toda comanda
@@ -262,7 +272,7 @@ final class CRUD {
         try salvar()
     }
 
-    // Fecha a comanda quando a soma dos pagamentos cobre exatamente o total com taxa de serviço.
+    // Fecha a comanda quando a soma dos pagamentos cobre exatamente o total da conta.
     func fecharComanda(_ comanda: Comanda) throws {
         try validarComandaAtiva(comanda)
         guard comanda.podeFechar else {

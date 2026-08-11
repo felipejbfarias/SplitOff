@@ -88,8 +88,16 @@ struct SheetHistoricoRole: View {
 
                     cartao {
                         linha("Subtotal", direita: moeda(comanda.subtotal))
-                        Divider().padding(.leading, 16)
-                        linha("Taxa de serviço 10%", direita: moeda(comanda.taxaServico))
+
+                        if comanda.cobraTaxaServico {
+                            Divider().padding(.leading, 16)
+                            linha("Taxa de serviço 10%", direita: moeda(comanda.taxaServico))
+                        }
+
+                        if comanda.valorCouvertPorPessoa > 0 {
+                            Divider().padding(.leading, 16)
+                            linha("Couvert artístico", direita: moeda(comanda.couvertArtistico))
+                        }
                     }
                 }
                 .frame(minHeight: geometry.size.height, alignment: .bottom)

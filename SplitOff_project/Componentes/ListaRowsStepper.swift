@@ -28,26 +28,72 @@ struct ListaRowsStepper: View {
     // Cardápio que recebe o novo item pela row "Adicionar".
     let cardapio: Cardapio
 
+    // Busca digitada na tela do cardápio; vazio mostra tudo.
+    var filtro: String = ""
+
     @State private var mostrandoAdicionar = false
+    @State private var fonteScanner: SheetEscanearCardapio.Fonte?
+
+    // Nenhum item bate com a busca (mas o cardápio tem itens).
+    private var buscaSemResultado: Bool {
+        !linhas.isEmpty && !linhas.contains(where: corresponde)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach($linhas) { $linha in
-                LinhaStepperView(linha: $linha)
-                Divider().padding(.leading, 16)
+                if corresponde(linha) {
+                    LinhaStepperView(linha: $linha)
+                    Divider().padding(.leading, 16)
+                }
             }
 
-            // abre o sheet de novo item do cardápio.
-            Button {
-                mostrandoAdicionar = true
-            } label: {
-                Text("Adicionar")
-                    .font(.headline)
-                    .foregroundStyle(.tertiary)
+            if buscaSemResultado {
+                Text("Nenhum item encontrado")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
-                    .contentShape(.rect)
+
+                Divider().padding(.leading, 16)
+            }
+
+            // Novo item, digitado ou escaneado de uma foto do cardápio
+            Menu {
+                Button {
+                    mostrandoAdicionar = true
+                } label: {
+                    Label("Digitar item", systemImage: "keyboard")
+                }
+
+                if CameraPicker.disponivel {
+                    Button {
+                        fonteScanner = .camera
+                    } label: {
+                        Label("Fotografar cardápio", systemImage: "camera")
+                    }
+                }
+
+                Button {
+                    fonteScanner = .galeria
+                } label: {
+                    Label("Escanear foto da galeria", systemImage: "photo.on.rectangle")
+                }
+            } label: {
+                HStack {
+                    Text("Adicionar")
+                        .font(.headline)
+
+                    Spacer()
+
+                    Image(systemName: "text.viewfinder")
+                        .font(.body)
+                }
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .contentShape(.rect)
             }
             .buttonStyle(.plain)
         }
@@ -55,6 +101,15 @@ struct ListaRowsStepper: View {
         .sheet(isPresented: $mostrandoAdicionar) {
             SheetAdicionarItem(cardapio: cardapio)
         }
+        .sheet(item: $fonteScanner) { fonte in
+            SheetEscanearCardapio(cardapio: cardapio, fonte: fonte)
+        }
+    }
+
+    // Sem acento e sem caixa, igual às outras buscas do app.
+    private func corresponde(_ linha: LinhaStepper) -> Bool {
+        let termo = filtro.trimmingCharacters(in: .whitespaces)
+        return termo.isEmpty || linha.nome.localizedStandardContains(termo)
     }
 }
 

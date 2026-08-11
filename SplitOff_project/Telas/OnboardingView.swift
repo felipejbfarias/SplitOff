@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// Apresentação do primeiro uso: três páginas deslizáveis mostrando o fluxo
+// Apresentação do primeiro uso: páginas deslizáveis mostrando o fluxo
 struct OnboardingView: View {
     let aoConcluir: () -> Void
 
@@ -23,6 +23,11 @@ struct OnboardingView: View {
             ilustracao: .imagem("maca_cortada"),
             titulo: "Divida com o grupo",
             descricao: "Adicione seus amigos e marque quem pediu cada item. Cada um paga só a parte dele, sem conta de cabeça."
+        ),
+        PaginaOnboarding(
+            ilustracao: .simbolo("text.viewfinder"),
+            titulo: "Escaneie o cardápio",
+            descricao: "Fotografe o cardápio, ou escolha uma foto da galeria, e a Apple Intelligence preenche o resto pra você. Como a leitura é feita por IA, ela pode cometer erros: revise os nomes e preços antes de adicionar."
         ),
         PaginaOnboarding(
             ilustracao: .simbolo("arrow.left.arrow.right.circle"),
