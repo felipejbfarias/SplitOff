@@ -128,7 +128,7 @@ enum ExtratorItensCardapio {
             let fluxo = sessao.streamResponse(
                 to: "Extraia os itens deste cardápio:\n\(bloco.joined(separator: "\n"))",
                 generating: CardapioGerado.self,
-                options: GenerationOptions(sampling: .greedy)
+                options: GenerationOptions(samplingMode: .greedy)
             )
 
             // Cada snapshot repete a lista inteira do bloco, então o id de cada posição é reaproveitado.

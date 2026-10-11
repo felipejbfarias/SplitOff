@@ -9,7 +9,7 @@ import Foundation
 import ActivityKit
 
 // Dados da Live Activity da comanda ativa.
-struct ComandaAtividadeAttributes: ActivityAttributes {
+nonisolated struct ComandaAtividadeAttributes: ActivityAttributes {
     // Fixos
     var nomeEvento: String
     var nomeLugar: String
